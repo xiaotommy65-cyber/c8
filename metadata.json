@@ -1,0 +1,6 @@
+{
+  "name": "文物區歷史數據庫 // Artifact Archive & Technical Inspector",
+  "description": "數位文物技術檢測分析報告與可持久化存檔系統，收錄《翠風遊俠 HD 像素著色器與精靈圖工作室》完整剖析與即時互動展台。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

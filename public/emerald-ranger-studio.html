@@ -1,0 +1,3293 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPRITE SHEET STUDIO // 翠風遊俠逐幀精靈圖與 ChronoPixel 微縮引擎工作站</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #0d0c12;
+    --bg-panel: #181622;
+    --bg-well: #110f18;
+    --ink: #050408;
+    --brass-lo: #6e4e1c;
+    --brass-mid: #b88a32;
+    --brass-hi: #f2cf66;
+    --emerald-hi: #4ade80;
+    --emerald-mid: #16a34a;
+    --crimson-hi: #f87171;
+    --cyan-hi: #38bdf8;
+    --text-main: #f5f2eb;
+    --text-muted: #968fb3;
+    --px: 3px;
+    --font-en: 'Press Start 2P', monospace;
+    --font-zh: 'DotGothic16', monospace;
+  }
+
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    image-rendering: pixelated;
+    -webkit-font-smoothing: none;
+  }
+
+  body {
+    margin: 0;
+    padding: 20px 16px 56px;
+    background-color: var(--bg-void);
+    background-image: radial-gradient(rgba(242, 207, 102, 0.07) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--text-main);
+    font-family: var(--font-zh), var(--font-en);
+    display: flex;
+    justify-content: center;
+  }
+
+  .studio-shell {
+    width: 100%;
+    max-width: 1220px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  /* 像素金絲外框 */
+  .px-panel {
+    position: relative;
+    background: linear-gradient(180deg, #1f1c2e 0%, #151320 100%);
+    padding: 22px 20px 20px;
+    box-shadow:
+      inset 0 0 0 var(--px) var(--brass-lo),
+      inset 0 calc(var(--px) * 2) 0 0 var(--brass-mid),
+      0 calc(var(--px) * -1) 0 0 var(--ink),
+      0 calc(var(--px) * 1) 0 0 var(--ink),
+      calc(var(--px) * -1) 0 0 0 var(--ink),
+      calc(var(--px) * 1) 0 0 0 var(--ink),
+      0 8px 0 0 rgba(0,0,0,0.6);
+  }
+
+  .panel-badge {
+    position: absolute;
+    top: -13px;
+    left: 18px;
+    background: #2b2540;
+    color: var(--brass-hi);
+    font-family: var(--font-en), var(--font-zh);
+    font-size: 10px;
+    padding: 4px 12px;
+    box-shadow:
+      inset 0 2px 0 0 var(--brass-hi),
+      0 0 0 3px var(--ink);
+  }
+
+  /* 透明灰白棋盤格背景 */
+  .checkerboard {
+    background-color: #262626;
+    background-image:
+      linear-gradient(45deg, #363636 25%, transparent 25%),
+      linear-gradient(-45deg, #363636 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #363636 75%),
+      linear-gradient(-45deg, transparent 75%, #363636 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+
+  .header-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+  }
+
+  .px-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 11px;
+    font-family: var(--font-zh), var(--font-en);
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--text-main);
+    background: #2f2947;
+    border: none;
+    cursor: pointer;
+    box-shadow:
+      inset 0 3px 0 0 #524878,
+      inset 0 -3px 0 0 #1b172b,
+      0 0 0 3px var(--ink);
+    transition: transform 0.04s steps(1);
+    white-space: nowrap;
+  }
+  .px-btn:hover { filter: brightness(1.12); }
+  .px-btn:active, .px-btn.active {
+    transform: translateY(2px);
+    background: var(--emerald-mid);
+    color: #041f0e;
+    box-shadow:
+      inset 0 3px 0 0 var(--emerald-hi),
+      0 0 0 3px var(--ink);
+  }
+  .px-btn.gold {
+    background: #d97706;
+    color: #fff;
+    box-shadow:
+      inset 0 3px 0 0 #fde047,
+      inset 0 -3px 0 0 #78350f,
+      0 0 0 3px var(--ink);
+  }
+  .px-btn.cyan {
+    background: #0284c7;
+    color: #fff;
+    box-shadow:
+      inset 0 3px 0 0 #38bdf8,
+      inset 0 -3px 0 0 #0369a1,
+      0 0 0 3px var(--ink);
+  }
+  .px-btn.crimson {
+    background: #b91c1c;
+    color: #fff;
+    box-shadow:
+      inset 0 3px 0 0 #fca5a5,
+      inset 0 -3px 0 0 #7f1d1d,
+      0 0 0 3px var(--ink);
+  }
+
+  .top-workspace {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 22px;
+  }
+  .two-col-tools {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 920px) {
+    .top-workspace, .two-col-tools { grid-template-columns: 1fr; }
+  }
+
+  .preview-stage {
+    position: relative;
+    height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 0 3px var(--ink), 0 0 0 2px var(--brass-lo);
+    overflow: hidden;
+  }
+
+  #liveCanvas {
+    width: 216px;
+    height: 216px;
+    image-rendering: pixelated;
+  }
+
+  .stage-hud {
+    position: absolute;
+    bottom: 8px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-en);
+    font-size: 9px;
+    color: var(--brass-hi);
+    text-shadow: 2px 2px 0 #000;
+    pointer-events: none;
+  }
+
+  .controls-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .anim-tabs, .btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .well-box {
+    background: var(--bg-well);
+    padding: 12px;
+    box-shadow: inset 0 0 0 2px var(--ink);
+  }
+
+  .palette-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+    background: var(--bg-well);
+    box-shadow: inset 0 0 0 2px var(--ink);
+  }
+
+  .swatch {
+    width: 20px;
+    height: 20px;
+    box-shadow: 0 0 0 2px var(--ink);
+    position: relative;
+  }
+  .swatch:hover::after {
+    content: attr(data-hex);
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #000;
+    color: #fff;
+    font-family: var(--font-en);
+    font-size: 8px;
+    padding: 3px 5px;
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  /* 著色器管線流程列 */
+  .shader-flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #0c0b12;
+    box-shadow: inset 0 0 0 2px var(--ink);
+    font-size: 11px;
+  }
+  .shader-node {
+    padding: 4px 8px;
+    background: #231f36;
+    color: var(--text-main);
+    box-shadow: inset 0 0 0 1px var(--brass-lo);
+    font-size: 11px;
+  }
+  .shader-node.active-pass {
+    background: #173326;
+    color: var(--emerald-hi);
+    box-shadow: inset 0 0 0 1px var(--emerald-mid);
+  }
+  .shader-arrow {
+    color: var(--brass-mid);
+    font-family: var(--font-en);
+    font-size: 9px;
+  }
+
+  /* 參數滑桿網格 */
+  .param-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 10px;
+  }
+  .param-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .param-item-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .param-val {
+    font-family: var(--font-en);
+    font-size: 9px;
+    color: var(--brass-hi);
+    font-variant-numeric: tabular-nums;
+  }
+  input[type="range"] {
+    accent-color: var(--emerald-hi);
+    cursor: pointer;
+    width: 100%;
+  }
+
+  /* 碰撞框編輯區 */
+  .box-editor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 640px) {
+    .box-editor-grid { grid-template-columns: 1fr; }
+  }
+  .box-group-title {
+    font-size: 12px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mini-num-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .mini-num-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .mini-num-field input {
+    width: 100%;
+    background: #1b172b;
+    color: var(--text-main);
+    border: 2px solid var(--ink);
+    padding: 4px 6px;
+    font-family: var(--font-en);
+    font-size: 9px;
+  }
+
+  /* 實戰打擊測試道場與 ECS 核心 */
+  .engine-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-well);
+    box-shadow: inset 0 0 0 2px var(--ink);
+    margin-bottom: 12px;
+  }
+  .arena-wrap {
+    position: relative;
+    background: #09080f;
+    box-shadow: inset 0 0 0 4px var(--ink), 0 0 0 2px var(--brass-lo);
+    overflow: hidden;
+  }
+  #arenaCanvas {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 1;
+    display: block;
+    image-rendering: pixelated;
+  }
+  .arena-hud-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #0c0b12;
+    border-top: 3px solid var(--ink);
+    font-size: 12px;
+  }
+  .arena-stat {
+    font-family: var(--font-en);
+    font-size: 9px;
+    color: var(--brass-hi);
+    font-variant-numeric: tabular-nums;
+  }
+  .arena-log {
+    font-family: var(--font-zh), var(--font-en);
+    font-size: 12px;
+    color: var(--emerald-hi);
+  }
+  .kernel-telemetry-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    background: #13111d;
+    border-top: 2px solid var(--ink);
+    font-family: var(--font-en);
+    font-size: 8px;
+    color: var(--cyan-hi);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 下方完整 Sprite Sheet 棋盤格展示區 */
+  .sheet-viewport {
+    padding: 20px;
+    overflow-x: auto;
+    box-shadow: inset 0 0 0 4px var(--ink), 0 0 0 2px var(--brass-lo);
+  }
+
+  .sheet-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .sheet-row:last-child { margin-bottom: 0; }
+
+  .row-label {
+    width: 165px;
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--brass-hi);
+    text-shadow: 2px 2px 0 #000;
+    background: rgba(13, 12, 18, 0.88);
+    padding: 10px 12px;
+    box-shadow: 0 0 0 2px var(--ink), inset 3px 0 0 0 var(--emerald-hi);
+  }
+  .row-label small {
+    display: block;
+    font-family: var(--font-en);
+    font-size: 8px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  .frames-track {
+    display: flex;
+    gap: 10px;
+  }
+
+  .frame-cell {
+    position: relative;
+    width: 124px;
+    height: 124px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px dashed rgba(255, 255, 255, 0.14);
+    transition: transform 0.05s steps(1), border-color 0.1s;
+  }
+  .frame-cell:hover {
+    border-color: var(--brass-hi);
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+  .frame-cell.current-frame {
+    border: 2px solid var(--emerald-hi);
+    background-color: rgba(74, 222, 128, 0.12);
+    box-shadow: 0 0 0 2px var(--ink);
+  }
+
+  .frame-sprite-wrap {
+    position: relative;
+    width: 108px;
+    height: 108px;
+  }
+  .frame-sprite-wrap canvas {
+    width: 108px;
+    height: 108px;
+    display: block;
+    image-rendering: pixelated;
+  }
+  .cell-box-overlay {
+    position: absolute;
+    pointer-events: none;
+  }
+  .cell-box-hurt {
+    border: 1.5px solid rgba(74, 222, 128, 0.9);
+    background: rgba(74, 222, 128, 0.12);
+  }
+  .cell-box-hit {
+    border: 1.5px solid rgba(248, 113, 113, 0.95);
+    background: rgba(248, 113, 113, 0.18);
+  }
+
+  .frame-idx {
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    font-family: var(--font-en);
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.55);
+    text-shadow: 1px 1px 0 #000;
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+
+<div class="studio-shell">
+  <!-- 統一跨區層級導覽列 -->
+  <nav style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; background:#0b0e14; border:1px solid #232a3b; font-family:system-ui,-apple-system,sans-serif; font-size:13px;">
+    <a href="/" style="color:#f5f2eb; font-weight:600; text-decoration:none; letter-spacing:0.02em;">ChronoForge</a>
+    <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+      <a href="/" style="color:#94a3b8; text-decoration:none;">總部大廳</a>
+      <a href="/studio" style="color:#4ade80; font-weight:600; text-decoration:none; border-bottom:1px solid #4ade80; padding-bottom:2px;">精靈與幀製作區</a>
+      <a href="/engine" style="color:#94a3b8; text-decoration:none;">純程式引擎區</a>
+      <a href="/play" style="color:#94a3b8; text-decoration:none;">遊戲遊玩區</a>
+      <a href="/archive" style="color:#94a3b8; text-decoration:none;">文物歷史庫</a>
+    </div>
+    <button type="button" onclick="sendBundleToEngineZone()" style="background:#16a34a; color:#ffffff; border:none; border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer;">傳送至引擎區</button>
+  </nav>
+
+  <!-- 頂部導航、Runtime JSON 與遊戲卡匣編譯匯出 -->
+  <header class="px-panel header-bar">
+    <div>
+      <div style="font-family:var(--font-en); font-size:12px; color:var(--brass-hi); text-shadow:2px 2px 0 #000;">
+        EMERALD RANGER // CHRONOPIXEL v2.0 SHADER &amp; MICRO-ENGINE STUDIO (72×72 PX)
+      </div>
+      <div style="font-size:13px; color:var(--text-muted); margin-top:5px;">
+        自研 5 階段可程式化像素著色器管線（32色大師色盤：31著色色階 ＋ 1輪廓專色）× 60Hz 固定步長 ECS 確定性重播核心 × 單檔遊戲卡匣編譯器
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <label class="px-btn cyan" style="cursor:pointer;">
+        📂 載入參考圖
+        <input type="file" id="uploadSheetInput" accept="image/*" style="display:none;" onchange="handleCustomSheetUpload(event)">
+      </label>
+      <button class="px-btn" id="gridBtn" onclick="toggleGrid()">⌗ 網格: OFF</button>
+      <button class="px-btn" id="onionBtn" onclick="toggleOnion()">◐ 洋蔥皮: OFF</button>
+      <button class="px-btn active" id="boxesBtn" onclick="toggleBoxes()">⊞ 碰撞框: ON</button>
+      <button class="px-btn" onclick="exportSpriteSheet()">⬇ 匯出 PNG</button>
+      <button class="px-btn" onclick="exportEngineRuntimeBundle()">⬇ 匯出 Engine JSON</button>
+      <button class="px-btn cyan" id="busSendBtn" onclick="sendBundleToEngineZone()">🚀 傳送至引擎區</button>
+      <button class="px-btn gold" onclick="compileGameCartridge()">📦 編譯遊戲卡匣 (.HTML)</button>
+    </div>
+  </header>
+
+  <!-- 上半部：即時動畫預覽舞台 + 動作控制器 -->
+  <div class="top-workspace">
+    <section class="px-panel" style="padding:16px;">
+      <div class="panel-badge">LIVE STAGE // 72×72 SHADER VIEWPORT</div>
+      <div class="preview-stage checkerboard">
+        <canvas id="liveCanvas" width="72" height="72"></canvas>
+        <div class="stage-hud">
+          <span id="hudAnimName">IDLE</span>
+          <span id="hudFrameInfo">FRAME 1 / 5</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="px-panel controls-col">
+      <div class="panel-badge">ANIMATION CONTROLLER // 動作序列與色盤鎖定</div>
+
+      <div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">選擇動作序列（支援即時補間、著色重繪與逐幀碰撞編輯）：</div>
+        <div class="anim-tabs">
+          <button class="px-btn active" data-anim="idle" onclick="setAnim('idle', this)">1. 待機與亮劍 (IDLE)</button>
+          <button class="px-btn" data-anim="run" onclick="setAnim('run', this)">2. 疾風奔跑 (RUN)</button>
+          <button class="px-btn" data-anim="slash" onclick="setAnim('slash', this)">3. 連段斬擊 (SLASH)</button>
+          <button class="px-btn" data-anim="hurt" onclick="setAnim('hurt', this)">4. 受擊倒地 (HURT/KO)</button>
+        </div>
+      </div>
+
+      <div class="well-box" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+        <button class="px-btn" id="playPauseBtn" onclick="togglePlay()">⏸ 暫停播放</button>
+        <button class="px-btn" onclick="stepFrame(-1)">◀ 上一幀</button>
+        <button class="px-btn" onclick="stepFrame(1)">下一幀 ▶</button>
+        <button class="px-btn" id="outlineBtn" onclick="cycleOutlinePalette()">✒ 輪廓: 深紫黑</button>
+
+        <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+          <span style="font-size:12px; color:var(--text-muted);">速度:</span>
+          <input type="range" min="2" max="16" value="9" oninput="updateFPS(this.value)" style="width:88px;">
+          <span id="fpsLabel" style="font-family:var(--font-en); font-size:10px; color:var(--brass-hi); width:48px;">9 FPS</span>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">像素著色器鎖定色盤 (32-Color Master Palette：31 著色色階 ＋ 1 輪廓專色)：</div>
+        <div class="palette-strip" id="paletteStrip"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 中段：程式化外觀生成器 + 5階段可程式化像素著色器管線 -->
+  <div class="two-col-tools">
+    <!-- 左欄：外觀、配色、武器與髮型生成器 -->
+    <section class="px-panel" style="display:flex; flex-direction:column; gap:12px;">
+      <div class="panel-badge">PROCEDURAL GENERATOR // 外觀配色與武器造型生成</div>
+
+      <div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">職業主題色盤（自動重映射 32 色著色器）：</div>
+        <div class="btn-row" id="themeTabs">
+          <button class="px-btn active" data-theme="emerald" onclick="setTheme('emerald', this)">翠風遊俠</button>
+          <button class="px-btn" data-theme="crimson" onclick="setTheme('crimson', this)">赤焰聖騎</button>
+          <button class="px-btn" data-theme="shadow" onclick="setTheme('shadow', this)">深淵暗影</button>
+          <button class="px-btn" data-theme="azure" onclick="setTheme('azure', this)">蒼藍秘銀</button>
+          <button class="px-btn gold" onclick="randomizeVariant()">🎲 隨機變體</button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">武器造型即時替換（同步套用於全 25 幀與卡匣編譯）：</div>
+        <div class="btn-row" id="weaponTabs">
+          <button class="px-btn active" data-weapon="broadsword" onclick="setWeapon('broadsword', this)">騎士闊劍</button>
+          <button class="px-btn" data-weapon="greatsword" onclick="setWeapon('greatsword', this)">雙手巨劍</button>
+          <button class="px-btn" data-weapon="spear" onclick="setWeapon('spear', this)">獵魔長槍</button>
+          <button class="px-btn" data-weapon="daggers" onclick="setWeapon('daggers', this)">雙刃短劍</button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">頭部造型：</div>
+        <div class="btn-row" id="hairTabs">
+          <button class="px-btn active" data-hair="ranger" onclick="setHairStyle('ranger', this)">蓬鬆遊俠</button>
+          <button class="px-btn" data-hair="short" onclick="setHairStyle('short', this)">俐落短髮</button>
+          <button class="px-btn" data-hair="hooded" onclick="setHairStyle('hooded', this)">兜帽披肩</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右欄：5 階段可程式化像素著色器管線 -->
+    <section class="px-panel" style="display:flex; flex-direction:column; gap:12px;">
+      <div class="panel-badge">5-PASS SHADER RENDER GRAPH // 可程式化著色器管線</div>
+
+      <div class="shader-flow" id="shaderFlowBar">
+        <span class="shader-node active-pass">P1: V2P光柵</span>
+        <span class="shader-arrow">→</span>
+        <span class="shader-node active-pass" id="nodeP2">P2: 量化+抖動</span>
+        <span class="shader-arrow">→</span>
+        <span class="shader-node active-pass" id="nodeP3">P3: 形態描邊</span>
+        <span class="shader-arrow">→</span>
+        <span class="shader-node" id="nodeP4">P4: Rim邊光</span>
+        <span class="shader-arrow">→</span>
+        <span class="shader-node active-pass" id="nodeP5">P5: 陰影/CRT</span>
+      </div>
+
+      <div class="well-box param-grid">
+        <label class="param-item">
+          <span class="param-item-head">P1 Alpha 裁切閾值 <span class="param-val" id="valAlphaCut">115</span></span>
+          <input type="range" id="inpAlphaCut" min="60" max="200" step="5" value="115" oninput="updateShaderParam('alphaThreshold', parseInt(this.value, 10))">
+        </label>
+        <label class="param-item">
+          <span class="param-item-head">P2 Bayer 4×4 抖動 <span class="param-val" id="valDither">0%</span></span>
+          <input type="range" id="inpDither" min="0" max="100" step="5" value="0" oninput="updateShaderParam('ditherPct', parseInt(this.value, 10))">
+        </label>
+      </div>
+
+      <div class="btn-row">
+        <button class="px-btn active" id="outlineModeBtn" onclick="cycleOutlineTopology()">P3 鄰域: 4-WAY</button>
+        <button class="px-btn" id="rimLightBtn" onclick="toggleShaderFlag('rimLight')">P4 定向邊光: OFF</button>
+        <button class="px-btn" id="scanlineBtn" onclick="toggleShaderFlag('scanlines')">P5 CRT掃描線: OFF</button>
+        <span id="shaderProfileBadge" style="margin-left:auto; font-family:var(--font-en); font-size:8px; color:var(--cyan-hi); align-self:center;">PASS: 0.0ms</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- 關鍵幀補間與逐幀碰撞編輯器 -->
+  <section class="px-panel" style="display:flex; flex-direction:column; gap:12px;">
+    <div class="panel-badge">KEYFRAME &amp; COLLISION SPEC EDITOR // 骨架補間與逐幀碰撞編輯</div>
+
+    <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px;">
+      <span id="editorFrameLabel" style="font-family:var(--font-en); font-size:10px; color:var(--brass-hi);">EDITING: IDLE #1</span>
+      <div class="btn-row">
+        <button class="px-btn cyan" onclick="insertTweenFrame()">✨ 插入自動補間幀</button>
+        <button class="px-btn" onclick="resetCurrentAnim()">↺ 重設此動作</button>
+        <button class="px-btn" onclick="exportCollisionJSON()">⬇ 僅匯出碰撞 JSON</button>
+      </div>
+    </div>
+
+    <div class="two-col-tools" style="gap:14px;">
+      <div class="well-box param-grid">
+        <label class="param-item">
+          <span class="param-item-head">身體前傾 (lean) <span class="param-val" id="valLean">0</span></span>
+          <input type="range" id="inpLean" min="-8" max="8" step="0.5" oninput="updateCurrentPoseParam('lean', parseFloat(this.value))">
+        </label>
+        <label class="param-item">
+          <span class="param-item-head">水平位移 (tx) <span class="param-val" id="valTx">0</span></span>
+          <input type="range" id="inpTx" min="-12" max="12" step="0.5" oninput="updateCurrentPoseParam('tx', parseFloat(this.value))">
+        </label>
+        <label class="param-item">
+          <span class="param-item-head">垂直位移 (ty) <span class="param-val" id="valTy">0</span></span>
+          <input type="range" id="inpTy" min="-6" max="20" step="0.5" oninput="updateCurrentPoseParam('ty', parseFloat(this.value))">
+        </label>
+        <label class="param-item">
+          <span class="param-item-head">旋轉角度 (rot) <span class="param-val" id="valRot">0</span></span>
+          <input type="range" id="inpRot" min="-45" max="95" step="1" oninput="updateCurrentPoseParam('rot', parseFloat(this.value))">
+        </label>
+        <label class="param-item">
+          <span class="param-item-head">斗篷揚起 (cloakLift) <span class="param-val" id="valCloak">0</span></span>
+          <input type="range" id="inpCloak" min="0" max="16" step="1" oninput="updateCurrentPoseParam('cloakLift', parseFloat(this.value))">
+        </label>
+        <label class="param-item">
+          <span class="param-item-head">主手劍角 (swordAngle) <span class="param-val" id="valSword">OFF</span></span>
+          <input type="range" id="inpSword" min="-120" max="90" step="2" oninput="updateCurrentSwordAngle(parseFloat(this.value))">
+        </label>
+        <div class="param-item" style="justify-content:center; gap:6px;">
+          <button class="px-btn" id="toggleSlashFxBtn" onclick="toggleCurrentSlashFX()">⚡ 劍氣弧光: OFF</button>
+        </div>
+      </div>
+
+      <div class="well-box box-editor-grid">
+        <div>
+          <div class="box-group-title">
+            <span style="color:var(--emerald-hi);">■ HURTBOX 受擊框</span>
+            <span style="font-size:10px; color:var(--text-muted);">綠框</span>
+          </div>
+          <div class="mini-num-grid">
+            <label class="mini-num-field">X<input type="number" id="hurtX" min="0" max="71" oninput="updateFrameBox('hurt','x',this.value)"></label>
+            <label class="mini-num-field">Y<input type="number" id="hurtY" min="0" max="71" oninput="updateFrameBox('hurt','y',this.value)"></label>
+            <label class="mini-num-field">W<input type="number" id="hurtW" min="2" max="72" oninput="updateFrameBox('hurt','w',this.value)"></label>
+            <label class="mini-num-field">H<input type="number" id="hurtH" min="2" max="72" oninput="updateFrameBox('hurt','h',this.value)"></label>
+          </div>
+        </div>
+
+        <div>
+          <div class="box-group-title">
+            <span style="color:var(--crimson-hi);">■ HITBOX 攻擊框</span>
+            <button class="px-btn" id="hitActiveBtn" style="padding:3px 8px; font-size:10px;" onclick="toggleCurrentHitActive()">判定: OFF</button>
+          </div>
+          <div class="mini-num-grid">
+            <label class="mini-num-field">X<input type="number" id="hitX" min="0" max="71" oninput="updateFrameBox('hit','x',this.value)"></label>
+            <label class="mini-num-field">Y<input type="number" id="hitY" min="0" max="71" oninput="updateFrameBox('hit','y',this.value)"></label>
+            <label class="mini-num-field">W<input type="number" id="hitW" min="2" max="72" oninput="updateFrameBox('hit','w',this.value)"></label>
+            <label class="mini-num-field">H<input type="number" id="hitH" min="2" max="72" oninput="updateFrameBox('hit','h',this.value)"></label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 60Hz 固定步長 ECS 微縮引擎、確定性重播與打擊測試道場 -->
+  <section class="px-panel">
+    <div class="panel-badge">CHRONOPIXEL 60HZ ECS KERNEL // 固定步長、確定性重播與實戰道場</div>
+
+    <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+      <div style="font-size:12px; color:var(--text-muted);">
+        操作：<span style="color:var(--brass-hi);">A/D (←/→)</span> 移動、<span style="color:var(--brass-hi);">J/Space</span> 揮劍、<span style="color:var(--brass-hi);">K</span> 受擊彈、<span style="color:var(--brass-hi);">R</span> 重置。確定性重播可 100% 重現相同 Tick 碰撞與 CRC32。
+      </div>
+      <div class="btn-row">
+        <button class="px-btn" onmousedown="liveInputFlags.left=true" onmouseup="liveInputFlags.left=false" onmouseleave="liveInputFlags.left=false" ontouchstart="liveInputFlags.left=true" ontouchend="liveInputFlags.left=false">◀ 左移</button>
+        <button class="px-btn" onmousedown="liveInputFlags.right=true" onmouseup="liveInputFlags.right=false" onmouseleave="liveInputFlags.right=false" ontouchstart="liveInputFlags.right=true" ontouchend="liveInputFlags.right=false">右移 ▶</button>
+        <button class="px-btn gold" onclick="queueLiveSlash()">⚔ 揮劍 (J)</button>
+        <button class="px-btn crimson" onclick="queueLiveProjectile()">💥 測試彈 (K)</button>
+        <button class="px-btn" onclick="resetEngineWorld()">↺ 重置道場</button>
+        <button class="px-btn active" id="soundBtn" onclick="toggleArenaSound()">🔊 音效: ON</button>
+      </div>
+    </div>
+
+    <!-- ECS 確定性重播與步進除錯控制列 -->
+    <div class="engine-toolbar">
+      <div class="btn-row">
+        <button class="px-btn" id="recTapeBtn" onclick="toggleRecordTape()">● 錄製輸入磁帶</button>
+        <button class="px-btn cyan" id="replayTapeBtn" onclick="startReplayTape()">▶ 重播驗證 (0F)</button>
+        <button class="px-btn" id="enginePauseBtn" onclick="toggleEnginePause()">⏸ 暫停内核</button>
+        <button class="px-btn" onclick="stepSingleEngineTick()">⏭ +1 FRAME</button>
+      </div>
+      <div class="btn-row" style="align-items:center;">
+        <span style="font-size:11px; color:var(--text-muted);">時間倍速:</span>
+        <button class="px-btn" data-spd="0.25" onclick="setEngineSpeed(0.25, this)">0.25x</button>
+        <button class="px-btn" data-spd="0.5" onclick="setEngineSpeed(0.5, this)">0.5x</button>
+        <button class="px-btn active" data-spd="1" onclick="setEngineSpeed(1, this)">1.0x</button>
+        <button class="px-btn" data-spd="2" onclick="setEngineSpeed(2, this)">2.0x</button>
+        <button class="px-btn" onclick="cycleEngineSeed()">🎲 切換種子</button>
+      </div>
+    </div>
+
+    <div class="arena-wrap">
+      <canvas id="arenaCanvas" width="480" height="160"></canvas>
+      <div class="arena-hud-bar">
+        <span class="arena-stat" id="arenaPlayerStat">PLAYER HP 100/100 · STATE: IDLE</span>
+        <span class="arena-stat" id="arenaDummyStat">DUMMY HP 300/300 · COMBO: 0</span>
+        <span class="arena-log" id="arenaEventLog">ECS 就緒：60Hz 固定步長微縮引擎待機中</span>
+      </div>
+      <div class="kernel-telemetry-bar">
+        <span id="kernTick">TICK: 0</span>
+        <span id="kernEntities">ENTITIES: 2</span>
+        <span id="kernSeed">SEED: 0xCAFE2026</span>
+        <span id="kernCrc">CRC32: 0x00000000</span>
+        <span id="kernTapeStat">TAPE: EMPTY</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 下半部：完整透明棋盤格 Sprite Sheet 總覽 -->
+  <section class="px-panel">
+    <div class="panel-badge">FULL SPRITE SHEET ATLAS // 點擊任一格鎖定編輯單幀姿態與碰撞框</div>
+    <div class="sheet-viewport checkerboard" id="sheetContainer"></div>
+  </section>
+</div>
+
+<canvas id="exportCanvas" width="576" height="288" style="display:none;"></canvas>
+
+<script>
+  // ============================================================================
+  // 1. 32色大師級像素色盤 (1 輪廓專色 + 31 著色色階)
+  // ============================================================================
+  const MASTER_PALETTE_HEX = [
+    '#120d17', // 0: 輪廓專色
+    '#2e180d', '#4a2816', '#6e3d22', '#945530', '#b86f42', // 髮色 (1..5)
+    '#9e5e40', '#cf8460', '#f0a884', '#ffd1b3',             // 肌膚 (6..9)
+    '#ffffff', '#211c2e',                                   // 眼白與瞳色 (10..11)
+    '#093016', '#125226', '#1e7d39', '#32ab4f', '#66d978', // 斗篷 (12..16)
+    '#29170e', '#472a1a', '#694028', '#8c583a', '#b07450', // 皮革 (17..21)
+    '#1f222e', '#32384a', '#4b536b', '#6c7694',             // 鎖甲 (22..25)
+    '#805510', '#cca029', '#ffe36e',                        // 黃銅 (26..28)
+    '#8fa3bf', '#c4d7ed', '#fff6a3'                         // 精鋼劍氣 (29..31)
+  ];
+
+  const PALETTE_THEMES = {
+    emerald: {
+      name: '翠風遊俠',
+      hair: ['#2e180d', '#4a2816', '#6e3d22', '#945530', '#b86f42'],
+      cloak: ['#093016', '#125226', '#1e7d39', '#32ab4f', '#66d978'],
+      leather: ['#29170e', '#472a1a', '#694028', '#8c583a', '#b07450'],
+      metal: ['#1f222e', '#32384a', '#4b536b', '#6c7694'],
+      brass: ['#805510', '#cca029', '#ffe36e'],
+      blade: ['#8fa3bf', '#c4d7ed', '#fff6a3']
+    },
+    crimson: {
+      name: '赤焰聖騎',
+      hair: ['#4a3c31', '#6e5c4c', '#99826d', '#c4ab93', '#ebd6bf'],
+      cloak: ['#3d0810', '#690d1b', '#9c192b', '#d12c40', '#ff6978'],
+      leather: ['#241512', '#3d221c', '#5c342b', '#7d4a3d', '#a36555'],
+      metal: ['#232630', '#3d4454', '#636e87', '#94a2bd'],
+      brass: ['#85530d', '#d4901c', '#ffda59'],
+      blade: ['#a8b6cc', '#dde8f5', '#ff9b54']
+    },
+    shadow: {
+      name: '深淵暗影',
+      hair: ['#1f2233', '#363b54', '#555d80', '#7e89b3', '#b5c1eb'],
+      cloak: ['#180b29', '#2c1547', '#462270', '#6936a3', '#9d66e3'],
+      leather: ['#14121c', '#252133', '#39334d', '#51496b', '#6e648f'],
+      metal: ['#161821', '#262b38', '#3c4457', '#58647d'],
+      brass: ['#2a5c6b', '#3b94ab', '#67e8f9'],
+      blade: ['#7e8aa6', '#b8c7e0', '#67e8f9']
+    },
+    azure: {
+      name: '蒼藍秘銀',
+      hair: ['#2b140d', '#472216', '#6b3624', '#944f36', '#bd6d4f'],
+      cloak: ['#09203d', '#0f396b', '#1859a3', '#2980db', '#63b5ff'],
+      leather: ['#1f1a18', '#382f2b', '#574942', '#78655c', '#9e867a'],
+      metal: ['#222936', '#3a465c', '#5b6d8c', '#879ec2'],
+      brass: ['#6b6120', '#b5a438', '#f5e46c'],
+      blade: ['#9bb8d9', '#d1e6ff', '#a5f3fc']
+    }
+  };
+
+  let activeThemeKey = 'emerald';
+  let activeTheme = PALETTE_THEMES.emerald;
+  let ACTIVE_PALETTE = [...MASTER_PALETTE_HEX];
+  let PAL_RGB = [];
+  let weaponType = 'broadsword';
+  let hairStyle = 'ranger';
+
+  // 同色階提亮對照索引（供 Pass 4 Rim Light 邊緣光使用，嚴格維持 31 色不溢出）
+  const RIM_STEP_UP = new Uint8Array([
+    0,
+    2, 3, 4, 5, 5,
+    7, 8, 9, 9,
+    10, 11,
+    13, 14, 15, 16, 16,
+    18, 19, 20, 21, 21,
+    23, 24, 25, 25,
+    27, 28, 28,
+    30, 31, 31
+  ]);
+
+  function rebuildActivePalette() {
+    ACTIVE_PALETTE = [
+      '#120d17',
+      ...activeTheme.hair,
+      '#9e5e40', '#cf8460', '#f0a884', '#ffd1b3',
+      '#ffffff', '#211c2e',
+      ...activeTheme.cloak,
+      ...activeTheme.leather,
+      ...activeTheme.metal,
+      ...activeTheme.brass,
+      ...activeTheme.blade
+    ];
+    PAL_RGB = ACTIVE_PALETTE.map(hex => {
+      const n = parseInt(hex.slice(1), 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255, hex];
+    });
+
+    const paletteStrip = document.getElementById('paletteStrip');
+    paletteStrip.innerHTML = '';
+    ACTIVE_PALETTE.forEach(hex => {
+      const sw = document.createElement('div');
+      sw.className = 'swatch';
+      sw.style.background = hex;
+      sw.setAttribute('data-hex', hex);
+      paletteStrip.appendChild(sw);
+    });
+  }
+
+  rebuildActivePalette();
+
+  // 尋找最接近色盤索引 (保留索引 0 專供輪廓)
+  function nearestPaletteIndex(r, g, b) {
+    let bestDist = 1e9;
+    let bestIdx = 1;
+    for (let i = 1; i < PAL_RGB.length; i++) {
+      const p = PAL_RGB[i];
+      const dr = (r - p[0]) * 0.30;
+      const dg = (g - p[1]) * 0.59;
+      const db = (b - p[2]) * 0.11;
+      const d = dr * dr + dg * dg + db * db;
+      if (d < bestDist) {
+        bestDist = d;
+        bestIdx = i;
+      }
+    }
+    return bestIdx;
+  }
+
+  function nearestPaletteRGB(r, g, b) {
+    return PAL_RGB[nearestPaletteIndex(r, g, b)];
+  }
+
+  // ============================================================================
+  // 2. 向量骨架與 5 階段可程式化像素著色器管線 (Pooled Zero-GC Shader Graph)
+  // ============================================================================
+  const CELL_SIZE = 72;
+  const BAYER_4X4 = [
+     0/16 - 0.5,  8/16 - 0.5,  2/16 - 0.5, 10/16 - 0.5,
+    12/16 - 0.5,  4/16 - 0.5, 14/16 - 0.5,  6/16 - 0.5,
+     3/16 - 0.5, 11/16 - 0.5,  1/16 - 0.5,  9/16 - 0.5,
+    15/16 - 0.5,  7/16 - 0.5, 13/16 - 0.5,  5/16 - 0.5
+  ];
+
+  const SHADER_CONFIG = {
+    alphaThreshold: 115,
+    ditherPct: 0,
+    outlineTopology: '4way', // '4way' | '8way' | 'none'
+    outlineColorMode: 'dark', // 'dark' | 'soft' | 'brass'
+    rimLight: false,
+    scanlines: false,
+    lastFrameMs: 0
+  };
+
+  function drawLimb(ctx, x1, y1, x2, y2, r1, r2, colDark, colMid, colLight) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x1 + nx * r1, y1 + ny * r1);
+    ctx.lineTo(x2 + nx * r2, y2 + ny * r2);
+    ctx.arc(x2, y2, r2, Math.atan2(ny, nx), Math.atan2(-ny, -nx));
+    ctx.lineTo(x1 - nx * r1, y1 - ny * r1);
+    ctx.arc(x1, y1, r1, Math.atan2(-ny, -nx), Math.atan2(ny, nx));
+    ctx.closePath();
+
+    const grad = ctx.createLinearGradient(x1 - nx * r1, y1 - ny * r1, x1 + nx * r1, y1 + ny * r1);
+    grad.addColorStop(0, colLight);
+    grad.addColorStop(0.55, colMid);
+    grad.addColorStop(1, colDark);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.strokeStyle = '#120d17';
+    ctx.lineWidth = 0.85;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawVectorRanger(ctx, pose) {
+    const t = activeTheme;
+    ctx.save();
+
+    const cx = 36 + (pose.tx || 0);
+    const cy = 40 + (pose.ty || 0);
+    ctx.translate(cx, cy);
+    if (pose.rot) ctx.rotate((pose.rot * Math.PI) / 180);
+
+    const lean = pose.lean || 0;
+    const hipX = 0, hipY = 6;
+    const chestX = lean * 0.7, chestY = -6;
+    const headX = lean * 1.1 + (pose.headX || 0), headY = -17 + (pose.headY || 0);
+
+    // LAYER 1: 斗篷後擺
+    ctx.save();
+    const cw = pose.cloakWave || 0;
+    const cLift = pose.cloakLift || 0;
+    ctx.beginPath();
+    ctx.moveTo(chestX - 6, chestY - 4);
+    ctx.bezierCurveTo(
+      chestX - 16 - cLift * 0.7, chestY + 2 - cLift * 0.4,
+      hipX - 20 - cLift, hipY + 10 - cLift * 0.6 + cw,
+      hipX - 12 - cLift * 0.9, hipY + 19 - cLift * 0.5 + cw
+    );
+    ctx.lineTo(hipX + 4 - cLift * 0.3, hipY + 17 - cLift * 0.3);
+    ctx.bezierCurveTo(
+      hipX + 2, hipY + 6,
+      chestX + 5, chestY + 2,
+      chestX + 4, chestY - 4
+    );
+    ctx.closePath();
+    const cloakGrad = ctx.createLinearGradient(chestX - 22, chestY - 4, hipX + 6, hipY + 20);
+    cloakGrad.addColorStop(0, t.cloak[3]);
+    cloakGrad.addColorStop(0.5, t.cloak[2]);
+    cloakGrad.addColorStop(1, t.cloak[0]);
+    ctx.fillStyle = cloakGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#120d17';
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(chestX - 5, chestY);
+    ctx.quadraticCurveTo(hipX - 12 - cLift * 0.6, hipY + 8 - cLift * 0.3, hipX - 8 - cLift * 0.7, hipY + 17 - cLift * 0.4 + cw);
+    ctx.strokeStyle = t.cloak[4];
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.restore();
+
+    // LAYER 2: 後側手臂與佩劍
+    if (pose.backArm) {
+      const ba = pose.backArm;
+      drawLimb(ctx, chestX + 3, chestY - 1, chestX + ba.ex, chestY + ba.ey, 3.2, 2.8, t.metal[0], t.metal[1], t.metal[2]);
+      drawLimb(ctx, chestX + ba.ex, chestY + ba.ey, chestX + ba.hx, chestY + ba.hy, 2.8, 2.3, t.leather[0], t.leather[1], t.leather[2]);
+      if (ba.swordAngle !== undefined) {
+        drawKnightSword(ctx, chestX + ba.hx, chestY + ba.hy, ba.swordAngle, ba.slashFX);
+      } else if (weaponType === 'daggers' && !pose.droppedSword) {
+        drawKnightSword(ctx, chestX + ba.hx, chestY + ba.hy, -15, false, true);
+      }
+      ctx.fillStyle = '#cf8460';
+      ctx.beginPath();
+      ctx.arc(chestX + ba.hx, chestY + ba.hy, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // LAYER 3: 雙腿與皮靴
+    const legs = [pose.legR, pose.legL];
+    legs.forEach((leg, idx) => {
+      if (!leg) return;
+      const isFront = idx === 1;
+      const ox = hipX + (isFront ? -2 : 2.5);
+      const oy = hipY + 1;
+      const kx = ox + leg.kx, ky = oy + leg.ky;
+      const fx = ox + leg.fx, fy = oy + leg.fy;
+
+      drawLimb(ctx, ox, oy, kx, ky, 3.8, 3.1, t.metal[0], isFront ? t.metal[2] : t.metal[1], t.metal[3]);
+      drawLimb(ctx, kx, ky, fx, fy, 3.2, 2.6, t.leather[0], isFront ? t.leather[2] : t.leather[1], t.leather[3]);
+      ctx.fillStyle = isFront ? t.leather[3] : t.leather[2];
+      ctx.fillRect(kx - 3.2, ky - 1.5, 6.4, 2.5);
+
+      ctx.beginPath();
+      ctx.ellipse(fx + 1.8, fy + 1.2, 4.2, 2.1, (leg.footAng || 0) * Math.PI / 180, 0, Math.PI * 2);
+      ctx.fillStyle = isFront ? t.leather[1] : t.leather[0];
+      ctx.fill();
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 0.9;
+      ctx.stroke();
+    });
+
+    // LAYER 4: 皮革護甲軀幹
+    ctx.save();
+    ctx.fillStyle = t.leather[1];
+    ctx.beginPath();
+    ctx.roundRect(hipX - 6.5, hipY - 1, 13, 5.5, 1.5);
+    ctx.fill();
+    ctx.strokeStyle = '#120d17';
+    ctx.lineWidth = 0.9;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(chestX - 6.5, chestY - 3);
+    ctx.lineTo(chestX + 6.5, chestY - 3);
+    ctx.lineTo(hipX + 5.5, hipY + 1);
+    ctx.lineTo(hipX - 5.5, hipY + 1);
+    ctx.closePath();
+    const armorGrad = ctx.createLinearGradient(chestX - 6, chestY, chestX + 6, hipY);
+    armorGrad.addColorStop(0, t.leather[4]);
+    armorGrad.addColorStop(0.45, t.leather[2]);
+    armorGrad.addColorStop(1, t.leather[0]);
+    ctx.fillStyle = armorGrad;
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(chestX, chestY - 1);
+    ctx.lineTo(hipX, hipY);
+    ctx.strokeStyle = t.leather[0];
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    ctx.fillStyle = t.leather[0];
+    ctx.fillRect(hipX - 6, hipY - 1.5, 12, 2.8);
+    ctx.fillStyle = t.brass[2];
+    ctx.fillRect(hipX - 1.5, hipY - 1.8, 3.2, 3.2);
+    ctx.restore();
+
+    // LAYER 5: 斗篷披肩領口
+    ctx.save();
+    if (!pose.cloakOpen) {
+      ctx.beginPath();
+      ctx.moveTo(chestX - 6.5, chestY - 4);
+      ctx.quadraticCurveTo(chestX - 10, hipY + 4, hipX - 7, hipY + 15);
+      ctx.lineTo(hipX - 3, hipY + 13);
+      ctx.quadraticCurveTo(chestX - 3, hipY + 2, chestX - 1, chestY - 2);
+      ctx.closePath();
+      ctx.fillStyle = t.cloak[3];
+      ctx.fill();
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 0.9;
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.ellipse(chestX, chestY - 3.5, 7.8, 3.6, 0, 0, Math.PI * 2);
+    const hoodGrad = ctx.createLinearGradient(chestX - 7, chestY - 7, chestX + 7, chestY);
+    hoodGrad.addColorStop(0, t.cloak[4]);
+    hoodGrad.addColorStop(0.5, t.cloak[2]);
+    hoodGrad.addColorStop(1, t.cloak[0]);
+    ctx.fillStyle = hoodGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#120d17';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = t.brass[2];
+    ctx.beginPath();
+    ctx.arc(chestX + 2.2, chestY - 2.8, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // LAYER 6: 頭部、表情與造型變化
+    ctx.save();
+    ctx.translate(headX, headY);
+    if (pose.headRot) ctx.rotate((pose.headRot * Math.PI) / 180);
+
+    ctx.fillStyle = t.hair[1];
+    ctx.beginPath();
+    ctx.arc(-1, -1.5, 8.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(-5.5, -4);
+    ctx.quadraticCurveTo(-5.8, 4.5, 0.5, 6.2);
+    ctx.quadraticCurveTo(6.2, 4.8, 6.2, -3.5);
+    ctx.closePath();
+    const faceGrad = ctx.createLinearGradient(-4, -3, 6, 5);
+    faceGrad.addColorStop(0, '#ffd1b3');
+    faceGrad.addColorStop(0.6, '#f0a884');
+    faceGrad.addColorStop(1, '#cf8460');
+    ctx.fillStyle = faceGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#120d17';
+    ctx.lineWidth = 0.9;
+    ctx.stroke();
+
+    ctx.fillStyle = '#f0a884';
+    ctx.beginPath();
+    ctx.arc(-5.6, 0.8, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (pose.face === 'ko') {
+      ctx.fillStyle = t.hair[0];
+      ctx.fillRect(-1.5, 0.5, 2.5, 1.1);
+      ctx.fillRect(2.8, 0.5, 2.5, 1.1);
+    } else if (pose.face === 'hurt') {
+      ctx.strokeStyle = t.hair[0];
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-2, 0); ctx.lineTo(0.2, 1.2); ctx.lineTo(-2, 2);
+      ctx.moveTo(4.8, 0); ctx.lineTo(2.6, 1.2); ctx.lineTo(4.8, 2);
+      ctx.stroke();
+      ctx.fillStyle = t.hair[1];
+      ctx.beginPath();
+      ctx.ellipse(1.8, 3.8, 2.0, 1.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-1.8, -0.4, 2.4, 2.1);
+      ctx.fillRect(2.6, -0.4, 2.4, 2.1);
+      ctx.fillStyle = '#120d17';
+      ctx.fillRect(-0.8, -0.2, 1.4, 1.9);
+      ctx.fillRect(3.5, -0.2, 1.4, 1.9);
+      const browTilt = pose.face === 'fierce' ? 0.6 : 0;
+      ctx.fillStyle = t.hair[1];
+      ctx.beginPath();
+      ctx.moveTo(-2.5, -1.8 - browTilt);
+      ctx.lineTo(0.8, -1.2 + browTilt);
+      ctx.lineTo(0.8, -0.4 + browTilt);
+      ctx.lineTo(-2.5, -1.0 - browTilt);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(2.2, -1.2 + browTilt);
+      ctx.lineTo(5.4, -1.8 - browTilt);
+      ctx.lineTo(5.4, -1.0 - browTilt);
+      ctx.lineTo(2.2, -0.4 + browTilt);
+      ctx.fill();
+      ctx.fillStyle = '#9e5e40';
+      ctx.fillRect(0.8, 3.8, 2.4, 1.0);
+    }
+
+    if (hairStyle === 'hooded') {
+      ctx.beginPath();
+      ctx.moveTo(-8.8, 3.0);
+      ctx.quadraticCurveTo(-9.5, -8.5, -1.0, -10.2);
+      ctx.quadraticCurveTo(7.0, -9.8, 7.6, -2.5);
+      ctx.lineTo(5.2, -1.8);
+      ctx.quadraticCurveTo(0.5, -4.6, -5.4, -2.0);
+      ctx.lineTo(-6.2, 3.2);
+      ctx.closePath();
+      const capGrad = ctx.createLinearGradient(-7, -10, 6, 2);
+      capGrad.addColorStop(0, t.cloak[4]);
+      capGrad.addColorStop(0.55, t.cloak[2]);
+      capGrad.addColorStop(1, t.cloak[0]);
+      ctx.fillStyle = capGrad;
+      ctx.fill();
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 1.0;
+      ctx.stroke();
+    } else if (hairStyle === 'short') {
+      ctx.beginPath();
+      ctx.moveTo(-7.2, 0.8);
+      ctx.quadraticCurveTo(-7.5, -6.5, -1.5, -8.0);
+      ctx.quadraticCurveTo(4.5, -8.5, 6.8, -3.5);
+      ctx.lineTo(5.6, -1.6);
+      ctx.lineTo(2.8, -3.0);
+      ctx.lineTo(0.4, -2.0);
+      ctx.lineTo(-2.6, -3.2);
+      ctx.lineTo(-5.2, 1.2);
+      ctx.closePath();
+      const shortGrad = ctx.createLinearGradient(-5, -8, 5, 1);
+      shortGrad.addColorStop(0, t.hair[4]);
+      shortGrad.addColorStop(0.5, t.hair[2]);
+      shortGrad.addColorStop(1, t.hair[1]);
+      ctx.fillStyle = shortGrad;
+      ctx.fill();
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 1.0;
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(-8.2, 1.5);
+      ctx.quadraticCurveTo(-9.2, -6.5, -2.5, -9.2);
+      ctx.quadraticCurveTo(4.5, -10.0, 7.8, -4.5);
+      ctx.lineTo(6.5, -1.2);
+      ctx.lineTo(4.2, -3.2);
+      ctx.lineTo(2.5, -0.8);
+      ctx.lineTo(0.2, -3.5);
+      ctx.lineTo(-2.2, -0.8);
+      ctx.lineTo(-4.2, -3.2);
+      ctx.lineTo(-5.8, 2.2);
+      ctx.closePath();
+
+      const hairGrad = ctx.createLinearGradient(-6, -9, 5, 2);
+      hairGrad.addColorStop(0, t.hair[4]);
+      hairGrad.addColorStop(0.35, t.hair[3]);
+      hairGrad.addColorStop(0.75, t.hair[2]);
+      hairGrad.addColorStop(1, t.hair[1]);
+      ctx.fillStyle = hairGrad;
+      ctx.fill();
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 1.0;
+      ctx.stroke();
+
+      ctx.strokeStyle = t.hair[4];
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(-1, -4.5, 4.8, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // LAYER 7: 前側手臂與武器
+    if (pose.frontArm) {
+      const fa = pose.frontArm;
+      const sx = chestX - 3.5, sy = chestY - 0.5;
+      const ex = sx + fa.ex, ey = sy + fa.ey;
+      const hx = sx + fa.hx, hy = sy + fa.hy;
+
+      drawLimb(ctx, sx, sy, ex, ey, 3.3, 2.8, t.metal[0], t.metal[2], t.metal[3]);
+      drawLimb(ctx, ex, ey, hx, hy, 2.9, 2.4, t.leather[0], t.leather[2], t.leather[3]);
+
+      if (fa.swordAngle !== undefined) {
+        drawKnightSword(ctx, hx, hy, fa.swordAngle, fa.slashFX);
+      }
+
+      ctx.fillStyle = '#f0a884';
+      ctx.beginPath();
+      ctx.arc(hx, hy, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+
+    if (pose.droppedSword) {
+      drawKnightSword(ctx, 14, 7, 0, false);
+    }
+
+    ctx.restore();
+  }
+
+  function drawKnightSword(ctx, hx, hy, angleDeg, withSlashFX, isOffhand) {
+    const t = activeTheme;
+    const wType = isOffhand ? 'daggers' : weaponType;
+    ctx.save();
+    ctx.translate(hx, hy);
+    ctx.rotate((angleDeg * Math.PI) / 180);
+
+    if (wType === 'spear') {
+      ctx.fillStyle = t.leather[2];
+      ctx.fillRect(-11, -1.2, 26, 2.4);
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 0.8;
+      ctx.strokeRect(-11, -1.2, 26, 2.4);
+      ctx.fillStyle = t.brass[2];
+      ctx.fillRect(13.5, -2.2, 2.5, 4.4);
+      ctx.beginPath();
+      ctx.moveTo(16, -3.2);
+      ctx.lineTo(27, 0);
+      ctx.lineTo(16, 3.2);
+      ctx.closePath();
+      const spearGrad = ctx.createLinearGradient(16, -3.2, 16, 3.2);
+      spearGrad.addColorStop(0, '#ffffff');
+      spearGrad.addColorStop(0.5, t.blade[1]);
+      spearGrad.addColorStop(1, t.metal[3]);
+      ctx.fillStyle = spearGrad;
+      ctx.fill();
+      ctx.stroke();
+    } else if (wType === 'greatsword') {
+      ctx.fillStyle = t.leather[1];
+      ctx.fillRect(-7, -1.6, 6.5, 3.2);
+      ctx.fillStyle = t.brass[2];
+      ctx.beginPath();
+      ctx.arc(-8, 0, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(1, -3.6);
+      ctx.lineTo(22, -2.8);
+      ctx.lineTo(27.5, 0);
+      ctx.lineTo(22, 2.8);
+      ctx.lineTo(1, 3.6);
+      ctx.closePath();
+      const gsGrad = ctx.createLinearGradient(0, -3.6, 0, 3.6);
+      gsGrad.addColorStop(0, '#ffffff');
+      gsGrad.addColorStop(0.45, t.blade[1]);
+      gsGrad.addColorStop(1, t.metal[3]);
+      ctx.fillStyle = gsGrad;
+      ctx.fill();
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 0.9;
+      ctx.stroke();
+
+      ctx.fillStyle = t.brass[2];
+      ctx.beginPath();
+      ctx.roundRect(-1.2, -6.8, 3.2, 13.6, 1);
+      ctx.fill();
+      ctx.stroke();
+    } else if (wType === 'daggers') {
+      ctx.fillStyle = t.leather[1];
+      ctx.fillRect(-4, -1.1, 4, 2.2);
+      ctx.beginPath();
+      ctx.moveTo(1, -1.8);
+      ctx.lineTo(11, -1.2);
+      ctx.lineTo(14.5, 0);
+      ctx.lineTo(11, 1.2);
+      ctx.lineTo(1, 1.8);
+      ctx.closePath();
+      ctx.fillStyle = t.blade[1];
+      ctx.fill();
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 0.85;
+      ctx.stroke();
+      ctx.fillStyle = t.brass[2];
+      ctx.fillRect(-0.5, -3.6, 2.0, 7.2);
+    } else {
+      ctx.fillStyle = t.leather[1];
+      ctx.fillRect(-5, -1.3, 4.5, 2.6);
+      ctx.fillStyle = t.brass[2];
+      ctx.beginPath();
+      ctx.arc(-5.8, 0, 2.0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(1, -2.3);
+      ctx.lineTo(18, -1.6);
+      ctx.lineTo(22.5, 0);
+      ctx.lineTo(18, 1.6);
+      ctx.lineTo(1, 2.3);
+      ctx.closePath();
+      const bladeGrad = ctx.createLinearGradient(0, -2.3, 0, 2.3);
+      bladeGrad.addColorStop(0, '#ffffff');
+      bladeGrad.addColorStop(0.45, t.blade[1]);
+      bladeGrad.addColorStop(1, t.metal[3]);
+      ctx.fillStyle = bladeGrad;
+      ctx.fill();
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 0.9;
+      ctx.stroke();
+
+      ctx.fillStyle = t.brass[2];
+      ctx.strokeStyle = '#120d17';
+      ctx.beginPath();
+      ctx.roundRect(-0.8, -5.2, 2.6, 10.4, 1);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    if (withSlashFX) {
+      const fxR = wType === 'greatsword' ? 21 : wType === 'spear' ? 22 : wType === 'daggers' ? 13 : 17;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(6, 0, fxR, -Math.PI * 0.48, Math.PI * 0.48);
+      ctx.strokeStyle = t.blade[2];
+      ctx.lineWidth = 3.2;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(7.5, 0, fxR, -Math.PI * 0.35, Math.PI * 0.35);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(fxR - 1, -9, 1.8, 10);
+      ctx.fillRect(fxR - 5, -5, 10, 1.8);
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  // 預先配置可複用離屏緩衝畫布與索引遮罩 (Zero-GC Shader Buffers)
+  const shaderOffCanvas = document.createElement('canvas');
+  shaderOffCanvas.width = CELL_SIZE;
+  shaderOffCanvas.height = CELL_SIZE;
+  const shaderOffCtx = shaderOffCanvas.getContext('2d', { willReadFrequently: true });
+
+  const shaderOutCanvas = document.createElement('canvas');
+  shaderOutCanvas.width = CELL_SIZE;
+  shaderOutCanvas.height = CELL_SIZE;
+  const shaderOutCtx = shaderOutCanvas.getContext('2d');
+  const shaderMask = new Uint8Array(CELL_SIZE * CELL_SIZE);
+  const shaderIdxMap = new Uint8Array(CELL_SIZE * CELL_SIZE);
+
+  /**
+   * 5-PASS PROGRAMMABLE PIXEL SHADER PIPELINE
+   * Pass 1: V2P Rasterization + Alpha Hard Threshold
+   * Pass 2: 4x4 Ordered Bayer Dithering + BT.601 Perceptual Palette Quantizer
+   * Pass 3: 4-Way / 8-Way Morphological Outline Dilation (Clamped 0..71)
+   * Pass 4: Directional Top-Left Rim Light Highlighter
+   * Pass 5: Shadow Grounding & Stage Compositing
+   */
+  function renderPixelShaderFrame(targetCtx, pose) {
+    const t0 = performance.now();
+
+    // Pass 1: 向量光柵化
+    shaderOffCtx.clearRect(0, 0, CELL_SIZE, CELL_SIZE);
+    drawVectorRanger(shaderOffCtx, pose);
+
+    const imgData = shaderOffCtx.getImageData(0, 0, CELL_SIZE, CELL_SIZE);
+    const src = imgData.data;
+    const outData = targetCtx.createImageData(CELL_SIZE, CELL_SIZE);
+    const dst = outData.data;
+
+    shaderMask.fill(0);
+    shaderIdxMap.fill(0);
+
+    const alphaCut = SHADER_CONFIG.alphaThreshold;
+    const ditherSpread = (SHADER_CONFIG.ditherPct / 100) * 56;
+
+    // Pass 2: Bayer 4x4 有序抖動 ＋ 31色感知量化
+    for (let y = 0; y < CELL_SIZE; y++) {
+      const by = (y & 3) << 2;
+      for (let x = 0; x < CELL_SIZE; x++) {
+        const i = y * CELL_SIZE + x;
+        const idx = i * 4;
+        if (src[idx + 3] >= alphaCut) {
+          shaderMask[i] = 1;
+          let r = src[idx];
+          let g = src[idx + 1];
+          let b = src[idx + 2];
+          if (ditherSpread > 0) {
+            const dOff = BAYER_4X4[by + (x & 3)] * ditherSpread;
+            r = Math.max(0, Math.min(255, r + dOff));
+            g = Math.max(0, Math.min(255, g + dOff));
+            b = Math.max(0, Math.min(255, b + dOff));
+          }
+          const palIdx = nearestPaletteIndex(r, g, b);
+          shaderIdxMap[i] = palIdx;
+          const p = PAL_RGB[palIdx];
+          dst[idx] = p[0];
+          dst[idx + 1] = p[1];
+          dst[idx + 2] = p[2];
+          dst[idx + 3] = 255;
+        }
+      }
+    }
+
+    // Pass 4: 左上角定向 Rim Light 邊緣高光（在膨脹輪廓前處理實心邊緣像素）
+    if (SHADER_CONFIG.rimLight) {
+      for (let y = 1; y < CELL_SIZE; y++) {
+        for (let x = 1; x < CELL_SIZE; x++) {
+          const p = y * CELL_SIZE + x;
+          if (shaderMask[p] === 1) {
+            const topEmpty = shaderMask[p - CELL_SIZE] === 0;
+            const leftEmpty = shaderMask[p - 1] === 0;
+            if (topEmpty || leftEmpty) {
+              const upIdx = RIM_STEP_UP[shaderIdxMap[p]];
+              const rp = PAL_RGB[upIdx];
+              const o = p * 4;
+              dst[o] = rp[0];
+              dst[o + 1] = rp[1];
+              dst[o + 2] = rp[2];
+            }
+          }
+        }
+      }
+    }
+
+    // Pass 3: 4 鄰域 / 8 鄰域形態學外輪廓膨脹
+    if (SHADER_CONFIG.outlineTopology !== 'none') {
+      const outCol = SHADER_CONFIG.outlineColorMode === 'dark'
+        ? [18, 13, 23]
+        : SHADER_CONFIG.outlineColorMode === 'soft'
+          ? [45, 34, 58]
+          : [255, 227, 110];
+      const use8Way = SHADER_CONFIG.outlineTopology === '8way';
+
+      for (let y = 0; y < CELL_SIZE; y++) {
+        for (let x = 0; x < CELL_SIZE; x++) {
+          const p = y * CELL_SIZE + x;
+          if (shaderMask[p] === 0) {
+            let hit =
+              (x > 0 && shaderMask[p - 1] === 1) ||
+              (x < CELL_SIZE - 1 && shaderMask[p + 1] === 1) ||
+              (y > 0 && shaderMask[p - CELL_SIZE] === 1) ||
+              (y < CELL_SIZE - 1 && shaderMask[p + CELL_SIZE] === 1);
+            if (!hit && use8Way) {
+              hit =
+                (x > 0 && y > 0 && shaderMask[p - CELL_SIZE - 1] === 1) ||
+                (x < CELL_SIZE - 1 && y > 0 && shaderMask[p - CELL_SIZE + 1] === 1) ||
+                (x > 0 && y < CELL_SIZE - 1 && shaderMask[p + CELL_SIZE - 1] === 1) ||
+                (x < CELL_SIZE - 1 && y < CELL_SIZE - 1 && shaderMask[p + CELL_SIZE + 1] === 1);
+            }
+            if (hit) {
+              const idx = p * 4;
+              dst[idx] = outCol[0];
+              dst[idx + 1] = outCol[1];
+              dst[idx + 2] = outCol[2];
+              dst[idx + 3] = 255;
+            }
+          }
+        }
+      }
+    }
+
+    // Pass 5: 地面投影合成
+    targetCtx.clearRect(0, 0, CELL_SIZE, CELL_SIZE);
+    targetCtx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    const shWidth = pose.rot && Math.abs(pose.rot) > 45 ? 42 : 24;
+    targetCtx.fillRect(Math.floor((CELL_SIZE - shWidth) / 2), 63, shWidth, 3);
+
+    shaderOutCtx.putImageData(outData, 0, 0);
+    targetCtx.drawImage(shaderOutCanvas, 0, 0);
+
+    SHADER_CONFIG.lastFrameMs = performance.now() - t0;
+  }
+
+  // ============================================================================
+  // 3. 定義 4 列 25 幀動作關鍵幀參數表與逐幀 Hitbox / Hurtbox 規格
+  // ============================================================================
+  const SPRITE_SHEET = {
+    idle: {
+      title: 'ROW 1 // IDLE & DRAW',
+      sub: '待機呼吸、摸劍柄與亮劍戒備 (5 Frames)',
+      frames: [
+        { ty: 0, cloakWave: 0, legL: { kx: -2, ky: 8, fx: -2.5, fy: 15 }, legR: { kx: 2.5, ky: 8, fx: 3, fy: 15 }, frontArm: { ex: -2, ey: 5, hx: 0, hy: 10 }, backArm: { ex: 3, ey: 5, hx: 5, hy: 9, swordAngle: -35 } },
+        { ty: 0.8, cloakWave: 0.5, legL: { kx: -2, ky: 7.5, fx: -2.5, fy: 14.2 }, legR: { kx: 2.5, ky: 7.5, fx: 3, fy: 14.2 }, frontArm: { ex: -2, ey: 5.5, hx: 0, hy: 10.5 }, backArm: { ex: 3, ey: 5, hx: 5, hy: 9 } },
+        { ty: 1.2, cloakWave: 1, legL: { kx: -2, ky: 7, fx: -2.5, fy: 13.8 }, legR: { kx: 2.5, ky: 7, fx: 3, fy: 13.8 }, frontArm: { ex: -1.5, ey: 5, hx: 1, hy: 9.5 }, backArm: { ex: 3, ey: 5, hx: 5, hy: 9 } },
+        { ty: 0.4, cloakWave: 0.5, cloakOpen: true, legL: { kx: -2, ky: 8, fx: -2.5, fy: 14.6 }, legR: { kx: 2.5, ky: 8, fx: 3, fy: 14.6 }, frontArm: { ex: 1, ey: 4, hx: 5, hy: 6 }, backArm: { ex: 3, ey: 5, hx: 5, hy: 9 }, face: 'fierce' },
+        { ty: 0, cloakWave: 0, cloakOpen: true, legL: { kx: -2, ky: 8, fx: -2.5, fy: 15 }, legR: { kx: 2.5, ky: 8, fx: 3, fy: 15 }, frontArm: { ex: 0, ey: 5, hx: 4, hy: 5, swordAngle: -42 }, backArm: { ex: 4, ey: 5, hx: 6, hy: 9 }, face: 'fierce' }
+      ]
+    },
+    run: {
+      title: 'ROW 2 // RUN CYCLE',
+      sub: '8幀流暢全身疾跑與斗篷波浪飛揚 (8 Frames)',
+      frames: [
+        { lean: 3.5, ty: -1, cloakOpen: true, cloakLift: 8, cloakWave: -2, legL: { kx: 6, ky: 5, fx: 9, fy: 13, footAng: -15 }, legR: { kx: -5, ky: 6, fx: -10, fy: 11, footAng: 35 }, frontArm: { ex: -4, ey: 4, hx: -1, hy: 8 }, backArm: { ex: 5, ey: 3, hx: 9, hy: 6 }, face: 'fierce' },
+        { lean: 4.0, ty: -2.2, cloakOpen: true, cloakLift: 11, cloakWave: -4, legL: { kx: 4, ky: 6, fx: 6, fy: 14 }, legR: { kx: -3, ky: 5, fx: -7, fy: 9, footAng: 45 }, frontArm: { ex: -2, ey: 4, hx: 2, hy: 8 }, backArm: { ex: 4, ey: 3, hx: 7, hy: 6 }, face: 'fierce' },
+        { lean: 3.5, ty: 0.5, cloakOpen: true, cloakLift: 9, cloakWave: 1, legL: { kx: 1, ky: 8, fx: 0, fy: 14.5 }, legR: { kx: 2, ky: 6, fx: -1, fy: 11 }, frontArm: { ex: 2, ey: 4, hx: 6, hy: 6 }, backArm: { ex: 1, ey: 4, hx: 3, hy: 8 }, face: 'fierce' },
+        { lean: 3.0, ty: 1.2, cloakOpen: true, cloakLift: 7, cloakWave: 3, legL: { kx: -3, ky: 7, fx: -6, fy: 13.8, footAng: 20 }, legR: { kx: 5, ky: 5, fx: 7, fy: 12, footAng: -15 }, frontArm: { ex: 4, ey: 3, hx: 8, hy: 4 }, backArm: { ex: -3, ey: 4, hx: -5, hy: 8 }, face: 'fierce' },
+        { lean: 3.5, ty: -1, cloakOpen: true, cloakLift: 10, cloakWave: -1, legL: { kx: -6, ky: 6, fx: -11, fy: 11, footAng: 40 }, legR: { kx: 7, ky: 5, fx: 10, fy: 13, footAng: -15 }, frontArm: { ex: 5, ey: 2, hx: 9, hy: 3 }, backArm: { ex: -5, ey: 4, hx: -7, hy: 7 }, face: 'fierce' },
+        { lean: 4.0, ty: -2.2, cloakOpen: true, cloakLift: 12, cloakWave: -3, legL: { kx: -4, ky: 5, fx: -8, fy: 9, footAng: 45 }, legR: { kx: 4, ky: 6, fx: 5, fy: 14 }, frontArm: { ex: 2, ey: 3, hx: 6, hy: 5 }, backArm: { ex: -2, ey: 4, hx: -3, hy: 8 }, face: 'fierce' },
+        { lean: 3.5, ty: 0.5, cloakOpen: true, cloakLift: 9, cloakWave: 2, legL: { kx: 2, ky: 6, fx: -1, fy: 11 }, legR: { kx: 1, ky: 8, fx: 0, fy: 14.5 }, frontArm: { ex: -1, ey: 4, hx: 2, hy: 7 }, backArm: { ex: 2, ey: 4, hx: 5, hy: 7 }, face: 'fierce' },
+        { lean: 3.0, ty: 1.2, cloakOpen: true, cloakLift: 7, cloakWave: 3, legL: { kx: 5, ky: 5, fx: 8, fy: 12.5, footAng: -10 }, legR: { kx: -3, ky: 7, fx: -6, fy: 13.8, footAng: 20 }, frontArm: { ex: -3, ey: 4, hx: -1, hy: 8 }, backArm: { ex: 4, ey: 3, hx: 8, hy: 6 }, face: 'fierce' }
+      ]
+    },
+    slash: {
+      title: 'ROW 3 // SWORD SLASH',
+      sub: '戒備、舉劍蓄力、前踏平斬、星芒劍氣爆發 (6 Frames)',
+      frames: [
+        { lean: 1, cloakOpen: true, cloakLift: 3, legL: { kx: -3, ky: 8, fx: -5, fy: 15 }, legR: { kx: 4, ky: 8, fx: 6, fy: 15 }, frontArm: { ex: 2, ey: 4, hx: 7, hy: 5, swordAngle: -45 }, backArm: { ex: -2, ey: 5, hx: -4, hy: 9 }, face: 'fierce' },
+        { lean: 1.5, cloakOpen: true, cloakLift: 5, legL: { kx: -4, ky: 8, fx: -6, fy: 15 }, legR: { kx: 4, ky: 8, fx: 7, fy: 15 }, frontArm: { ex: 3, ey: 3, hx: 8, hy: 4, swordAngle: -50 }, backArm: { ex: -3, ey: 5, hx: -5, hy: 9 }, face: 'fierce' },
+        { lean: -1.5, cloakOpen: true, cloakLift: 7, legL: { kx: -5, ky: 8, fx: -7, fy: 15 }, legR: { kx: 5, ky: 7, fx: 8, fy: 15 }, frontArm: { ex: 4, ey: 0, hx: 9, hy: -2, swordAngle: -85 }, backArm: { ex: -3, ey: 4, hx: -6, hy: 7 }, face: 'fierce' },
+        { lean: 4.5, tx: 2, ty: 1, cloakOpen: true, cloakLift: 11, cloakWave: -2, legL: { kx: -6, ky: 7, fx: -10, fy: 14 }, legR: { kx: 7, ky: 6, fx: 10, fy: 14 }, frontArm: { ex: 4, ey: 4, hx: 9, hy: 6, swordAngle: 12 }, backArm: { ex: -4, ey: 3, hx: -7, hy: 6 }, face: 'fierce' },
+        { lean: 5.0, tx: 3, ty: 0.5, cloakOpen: true, cloakLift: 13, cloakWave: -4, legL: { kx: -6, ky: 7, fx: -10, fy: 14.5 }, legR: { kx: 7, ky: 6, fx: 10, fy: 14.5 }, frontArm: { ex: 5, ey: 2, hx: 11, hy: 3, swordAngle: -28, slashFX: true }, backArm: { ex: -5, ey: 3, hx: -8, hy: 5 }, face: 'fierce' },
+        { lean: 2.5, tx: 1, cloakOpen: true, cloakLift: 7, cloakWave: 1, legL: { kx: -4, ky: 8, fx: -7, fy: 15 }, legR: { kx: 5, ky: 7, fx: 8, fy: 15 }, frontArm: { ex: 3, ey: 4, hx: 8, hy: 5, swordAngle: -40 }, backArm: { ex: -2, ey: 4, hx: -4, hy: 8 }, face: 'fierce' }
+      ]
+    },
+    hurt: {
+      title: 'ROW 4 // HURT & DEFEAT',
+      sub: '受擊驚呼、重心失衡後仰、跌落與倒地不起 (6 Frames)',
+      frames: [
+        { lean: -2, ty: 0, cloakOpen: true, cloakLift: 3, legL: { kx: -3, ky: 8, fx: -4, fy: 15 }, legR: { kx: 3, ky: 8, fx: 4, fy: 15 }, frontArm: { ex: -6, ey: -2, hx: -9, hy: -7 }, backArm: { ex: 5, ey: 3, hx: 8, hy: 7 }, face: 'hurt' },
+        { lean: -5, rot: -22, tx: -3, ty: 2, cloakOpen: true, cloakLift: 6, legL: { kx: -2, ky: 7, fx: -1, fy: 14 }, legR: { kx: 5, ky: 6, fx: 9, fy: 12 }, frontArm: { ex: -7, ey: -1, hx: -11, hy: -4 }, backArm: { ex: 6, ey: 2, hx: 10, hy: 5 }, face: 'hurt' },
+        { rot: 82, tx: -4, ty: 15, cloakOpen: true, cloakLift: 2, legL: { kx: -3, ky: 6, fx: -6, fy: 13 }, legR: { kx: 2, ky: 5, fx: -2, fy: 12 }, frontArm: { ex: 2, ey: 4, hx: 4, hy: 8 }, face: 'hurt' },
+        { rot: 86, tx: -4, ty: 16, cloakOpen: true, cloakLift: 1, legL: { kx: -2, ky: 6, fx: -5, fy: 13 }, legR: { kx: 2, ky: 6, fx: -1, fy: 12 }, frontArm: { ex: 1, ey: 5, hx: 3, hy: 9 }, face: 'hurt' },
+        { rot: 90, tx: -3, ty: 17, cloakOpen: true, cloakLift: 0, legL: { kx: -1, ky: 7, fx: -3, fy: 14 }, legR: { kx: 1, ky: 7, fx: 0, fy: 14 }, frontArm: { ex: 1, ey: 5, hx: 2, hy: 9 }, face: 'ko' },
+        { rot: 90, tx: -2, ty: 18, cloakOpen: false, cloakLift: 0, legL: { kx: 0, ky: 7, fx: -1, fy: 14 }, legR: { kx: 0, ky: 7, fx: 0, fy: 14 }, frontArm: { ex: 2, ey: 4, hx: 5, hy: 6 }, droppedSword: true, face: 'ko' }
+      ]
+    }
+  };
+
+  const DEFAULT_SPRITE_SNAPSHOT = JSON.parse(JSON.stringify(SPRITE_SHEET));
+
+  // 逐幀碰撞框規格 (72x72 像素座標)
+  const FRAME_BOXES = {};
+  function computeDefaultBox(animKey, idx, pose) {
+    const isLying = pose.rot && Math.abs(pose.rot) > 45;
+    const hurt = isLying
+      ? { x: 14, y: 45, w: 42, h: 17 }
+      : {
+          x: Math.round(25 + (pose.tx || 0) + (pose.lean || 0) * 0.6),
+          y: Math.round(14 + (pose.ty || 0)),
+          w: 22,
+          h: 48
+        };
+    const isSlashActive = animKey === 'slash' && (idx === 3 || idx === 4);
+    const hit = isSlashActive
+      ? { x: 40, y: 20, w: 28, h: 32, active: true }
+      : { x: 40, y: 24, w: 22, h: 24, active: false };
+    return { hurt, hit };
+  }
+
+  function initBoxesForAnim(animKey) {
+    SPRITE_SHEET[animKey].frames.forEach((pose, idx) => {
+      FRAME_BOXES[`${animKey}:${idx}`] = computeDefaultBox(animKey, idx, pose);
+    });
+  }
+  Object.keys(SPRITE_SHEET).forEach(initBoxesForAnim);
+
+  function getBoxSpec(animKey, idx) {
+    const key = `${animKey}:${idx}`;
+    if (!FRAME_BOXES[key]) {
+      FRAME_BOXES[key] = computeDefaultBox(animKey, idx, SPRITE_SHEET[animKey].frames[idx] || {});
+    }
+    return FRAME_BOXES[key];
+  }
+
+  // ============================================================================
+  // 4. 建立並渲染下方完整棋盤格 Sprite Sheet 畫布矩陣
+  // ============================================================================
+  const sheetContainer = document.getElementById('sheetContainer');
+  const cellMap = {};
+
+  function buildAllSpriteCells() {
+    const tStart = performance.now();
+    let frameTotal = 0;
+    sheetContainer.innerHTML = '';
+    Object.entries(SPRITE_SHEET).forEach(([animKey, group]) => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'sheet-row';
+
+      const labelEl = document.createElement('div');
+      labelEl.className = 'row-label';
+      labelEl.innerHTML = `${group.title}<small>${group.sub}</small>`;
+      rowEl.appendChild(labelEl);
+
+      const trackEl = document.createElement('div');
+      trackEl.className = 'frames-track';
+
+      cellMap[animKey] = [];
+
+      group.frames.forEach((frameCfg, idx) => {
+        frameTotal++;
+        const cell = document.createElement('div');
+        cell.className = 'frame-cell';
+        cell.onclick = () => selectSpecificFrame(animKey, idx);
+
+        const badge = document.createElement('span');
+        badge.className = 'frame-idx';
+        badge.textContent = `#${idx + 1}`;
+        cell.appendChild(badge);
+
+        const wrap = document.createElement('div');
+        wrap.className = 'frame-sprite-wrap';
+
+        const cvs = document.createElement('canvas');
+        cvs.width = CELL_SIZE;
+        cvs.height = CELL_SIZE;
+        const cCtx = cvs.getContext('2d');
+        renderPixelShaderFrame(cCtx, frameCfg);
+        wrap.appendChild(cvs);
+
+        const hurtDiv = document.createElement('div');
+        hurtDiv.className = 'cell-box-overlay cell-box-hurt';
+        wrap.appendChild(hurtDiv);
+
+        const hitDiv = document.createElement('div');
+        hitDiv.className = 'cell-box-overlay cell-box-hit';
+        wrap.appendChild(hitDiv);
+
+        cell.appendChild(wrap);
+        trackEl.appendChild(cell);
+        cellMap[animKey].push({ cell, canvas: cvs, cfg: frameCfg, hurtDiv, hitDiv });
+      });
+
+      rowEl.appendChild(trackEl);
+      sheetContainer.appendChild(rowEl);
+    });
+    const totalMs = performance.now() - tStart;
+    const avgMs = frameTotal > 0 ? totalMs / frameTotal : 0;
+    document.getElementById('shaderProfileBadge').textContent =
+      `AVG: ${avgMs.toFixed(2)}ms/F · TOTAL: ${totalMs.toFixed(1)}ms`;
+    refreshAllCellBoxOverlays();
+  }
+
+  function refreshAllCellBoxOverlays() {
+    const scale = 108 / CELL_SIZE;
+    Object.keys(cellMap).forEach((animKey) => {
+      cellMap[animKey].forEach((item, idx) => {
+        const boxes = getBoxSpec(animKey, idx);
+        item.hurtDiv.style.display = showBoxes ? 'block' : 'none';
+        item.hurtDiv.style.left = `${boxes.hurt.x * scale}px`;
+        item.hurtDiv.style.top = `${boxes.hurt.y * scale}px`;
+        item.hurtDiv.style.width = `${boxes.hurt.w * scale}px`;
+        item.hurtDiv.style.height = `${boxes.hurt.h * scale}px`;
+
+        item.hitDiv.style.display = showBoxes && boxes.hit.active ? 'block' : 'none';
+        item.hitDiv.style.left = `${boxes.hit.x * scale}px`;
+        item.hitDiv.style.top = `${boxes.hit.y * scale}px`;
+        item.hitDiv.style.width = `${boxes.hit.w * scale}px`;
+        item.hitDiv.style.height = `${boxes.hit.h * scale}px`;
+      });
+    });
+  }
+
+  function rebuildSingleFrameCell(animKey, idx) {
+    const item = cellMap[animKey]?.[idx];
+    if (!item) return;
+    const ctx = item.canvas.getContext('2d');
+    renderPixelShaderFrame(ctx, SPRITE_SHEET[animKey].frames[idx]);
+    document.getElementById('shaderProfileBadge').textContent =
+      `FRAME: ${SHADER_CONFIG.lastFrameMs.toFixed(2)}ms`;
+    refreshAllCellBoxOverlays();
+    updateLiveStage();
+  }
+
+  // ============================================================================
+  // 5. 載入參考精靈圖 (邊界 BFS Flood Fill 棋盤格去背與安全釋放)
+  // ============================================================================
+  function isCheckerboardPixel(d, pixelIdx) {
+    const o = pixelIdx * 4;
+    if (d[o + 3] < 16) return true;
+    const r = d[o], g = d[o + 1], b = d[o + 2];
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const sat = max - min;
+    return sat <= 12 && max >= 28 && max <= 104;
+  }
+
+  function handleCustomSheetUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+    img.onload = () => {
+      const w = img.width, h = img.height;
+      const temp = document.createElement('canvas');
+      temp.width = w;
+      temp.height = h;
+      const tCtx = temp.getContext('2d');
+      tCtx.drawImage(img, 0, 0);
+
+      const imgData = tCtx.getImageData(0, 0, w, h);
+      const d = imgData.data;
+      const visited = new Uint8Array(w * h);
+      const queue = [];
+
+      const enqueue = (x, y) => {
+        if (x < 0 || x >= w || y < 0 || y >= h) return;
+        const p = y * w + x;
+        if (visited[p]) return;
+        visited[p] = 1;
+        if (isCheckerboardPixel(d, p)) {
+          queue.push(p);
+        }
+      };
+
+      for (let x = 0; x < w; x++) {
+        enqueue(x, 0);
+        enqueue(x, h - 1);
+      }
+      for (let y = 1; y < h - 1; y++) {
+        enqueue(0, y);
+        enqueue(w - 1, y);
+      }
+
+      let head = 0;
+      while (head < queue.length) {
+        const p = queue[head++];
+        d[p * 4 + 3] = 0;
+        const px = p % w;
+        const py = (p - px) / w;
+        enqueue(px - 1, py);
+        enqueue(px + 1, py);
+        enqueue(px, py - 1);
+        enqueue(px, py + 1);
+      }
+      tCtx.putImageData(imgData, 0, 0);
+
+      const colW = w / 8;
+      const rowH = h / 4;
+      const keys = ['idle', 'run', 'slash', 'hurt'];
+
+      keys.forEach((k, rIdx) => {
+        cellMap[k].forEach((item, cIdx) => {
+          const ctx = item.canvas.getContext('2d');
+          ctx.clearRect(0, 0, CELL_SIZE, CELL_SIZE);
+          ctx.drawImage(
+            temp,
+            cIdx * colW, rIdx * rowH, colW, rowH,
+            0, 0, CELL_SIZE, CELL_SIZE
+          );
+        });
+      });
+
+      URL.revokeObjectURL(objectUrl);
+      updateLiveStage();
+    };
+    img.src = objectUrl;
+  }
+
+  // ============================================================================
+  // 6. 即時動畫播放器、洋蔥皮、網格、掃描線與參數同步
+  // ============================================================================
+  const liveCanvas = document.getElementById('liveCanvas');
+  const liveCtx = liveCanvas.getContext('2d');
+
+  let currentAnim = 'idle';
+  let currentFrameIdx = 0;
+  let isPlaying = true;
+  let fps = 9;
+  let showGrid = false;
+  let showOnion = false;
+  let showBoxes = true;
+  let rafId = null;
+  let lastFrameTime = 0;
+
+  function syncEditorFields() {
+    const frames = SPRITE_SHEET[currentAnim].frames;
+    const idx = currentFrameIdx % frames.length;
+    const pose = frames[idx];
+    const boxes = getBoxSpec(currentAnim, idx);
+
+    document.getElementById('editorFrameLabel').textContent = `EDITING: ${currentAnim.toUpperCase()} #${idx + 1}`;
+    const lean = pose.lean || 0;
+    const tx = pose.tx || 0;
+    const ty = pose.ty || 0;
+    const rot = pose.rot || 0;
+    const cloak = pose.cloakLift || 0;
+    const sword = pose.frontArm?.swordAngle;
+    const slashFx = Boolean(pose.frontArm?.slashFX);
+
+    document.getElementById('inpLean').value = lean;
+    document.getElementById('valLean').textContent = lean;
+    document.getElementById('inpTx').value = tx;
+    document.getElementById('valTx').textContent = tx;
+    document.getElementById('inpTy').value = ty;
+    document.getElementById('valTy').textContent = ty;
+    document.getElementById('inpRot').value = rot;
+    document.getElementById('valRot').textContent = `${rot}°`;
+    document.getElementById('inpCloak').value = cloak;
+    document.getElementById('valCloak').textContent = cloak;
+    document.getElementById('inpSword').value = sword !== undefined ? sword : -40;
+    document.getElementById('valSword').textContent = sword !== undefined ? `${sword}°` : 'OFF';
+
+    const slashBtn = document.getElementById('toggleSlashFxBtn');
+    slashBtn.textContent = `⚡ 劍氣弧光: ${slashFx ? 'ON' : 'OFF'}`;
+    slashBtn.classList.toggle('active', slashFx);
+
+    document.getElementById('hurtX').value = boxes.hurt.x;
+    document.getElementById('hurtY').value = boxes.hurt.y;
+    document.getElementById('hurtW').value = boxes.hurt.w;
+    document.getElementById('hurtH').value = boxes.hurt.h;
+
+    document.getElementById('hitX').value = boxes.hit.x;
+    document.getElementById('hitY').value = boxes.hit.y;
+    document.getElementById('hitW').value = boxes.hit.w;
+    document.getElementById('hitH').value = boxes.hit.h;
+    const hitBtn = document.getElementById('hitActiveBtn');
+    hitBtn.textContent = `判定: ${boxes.hit.active ? 'ON' : 'OFF'}`;
+    hitBtn.classList.toggle('crimson', boxes.hit.active);
+  }
+
+  function updateLiveStage() {
+    const frames = cellMap[currentAnim];
+    if (!frames || !frames.length) return;
+    currentFrameIdx = currentFrameIdx % frames.length;
+
+    liveCtx.clearRect(0, 0, CELL_SIZE, CELL_SIZE);
+
+    if (showOnion && frames.length > 1) {
+      const prevIdx = (currentFrameIdx - 1 + frames.length) % frames.length;
+      liveCtx.save();
+      liveCtx.globalAlpha = 0.28;
+      liveCtx.drawImage(frames[prevIdx].canvas, 0, 0);
+      liveCtx.restore();
+    }
+
+    liveCtx.drawImage(frames[currentFrameIdx].canvas, 0, 0);
+
+    if (SHADER_CONFIG.scanlines) {
+      liveCtx.fillStyle = 'rgba(0, 0, 0, 0.24)';
+      for (let y = 1; y < CELL_SIZE; y += 2) {
+        liveCtx.fillRect(0, y, CELL_SIZE, 1);
+      }
+    }
+
+    if (showGrid) {
+      liveCtx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+      for (let i = 0; i < CELL_SIZE; i += 8) {
+        liveCtx.fillRect(i, 0, 1, CELL_SIZE);
+        liveCtx.fillRect(0, i, CELL_SIZE, 1);
+      }
+    }
+
+    if (showBoxes) {
+      const boxes = getBoxSpec(currentAnim, currentFrameIdx);
+      liveCtx.strokeStyle = '#4ade80';
+      liveCtx.lineWidth = 1;
+      liveCtx.strokeRect(boxes.hurt.x + 0.5, boxes.hurt.y + 0.5, boxes.hurt.w - 1, boxes.hurt.h - 1);
+
+      if (boxes.hit.active) {
+        liveCtx.fillStyle = 'rgba(248, 113, 113, 0.22)';
+        liveCtx.fillRect(boxes.hit.x, boxes.hit.y, boxes.hit.w, boxes.hit.h);
+        liveCtx.strokeStyle = '#f87171';
+        liveCtx.strokeRect(boxes.hit.x + 0.5, boxes.hit.y + 0.5, boxes.hit.w - 1, boxes.hit.h - 1);
+      }
+    }
+
+    document.getElementById('hudAnimName').textContent = currentAnim.toUpperCase();
+    document.getElementById('hudFrameInfo').textContent = `FRAME ${currentFrameIdx + 1} / ${frames.length}`;
+
+    document.querySelectorAll('.frame-cell').forEach(el => el.classList.remove('current-frame'));
+    frames[currentFrameIdx].cell.classList.add('current-frame');
+    syncEditorFields();
+  }
+
+  function scheduleLoop() {
+    if (isPlaying && rafId === null) {
+      lastFrameTime = performance.now();
+      rafId = requestAnimationFrame(loop);
+    }
+  }
+
+  function stopLoop() {
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+  }
+
+  function loop(timestamp) {
+    rafId = null;
+    if (!isPlaying) return;
+    const interval = 1000 / fps;
+    if (timestamp - lastFrameTime >= interval) {
+      lastFrameTime = timestamp;
+      const frames = cellMap[currentAnim];
+      currentFrameIdx = (currentFrameIdx + 1) % frames.length;
+      updateLiveStage();
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  buildAllSpriteCells();
+  updateLiveStage();
+  scheduleLoop();
+
+  // ============================================================================
+  // 7. 著色管線控制、外觀生成、關鍵幀補間、PNG / JSON 與遊戲卡匣編譯器
+  // ============================================================================
+  function syncShaderFlowNodes() {
+    document.getElementById('nodeP2').textContent = SHADER_CONFIG.ditherPct > 0 ? 'P2: 量化+Bayer' : 'P2: 31色量化';
+    document.getElementById('nodeP3').classList.toggle('active-pass', SHADER_CONFIG.outlineTopology !== 'none');
+    document.getElementById('nodeP4').classList.toggle('active-pass', SHADER_CONFIG.rimLight);
+    document.getElementById('nodeP5').textContent = SHADER_CONFIG.scanlines ? 'P5: 陰影+CRT' : 'P5: 陰影合成';
+  }
+
+  function updateShaderParam(key, val) {
+    SHADER_CONFIG[key] = val;
+    if (key === 'alphaThreshold') {
+      document.getElementById('valAlphaCut').textContent = val;
+    } else if (key === 'ditherPct') {
+      document.getElementById('valDither').textContent = `${val}%`;
+    }
+    syncShaderFlowNodes();
+    buildAllSpriteCells();
+    updateLiveStage();
+  }
+
+  function cycleOutlineTopology() {
+    const order = ['4way', '8way', 'none'];
+    const next = order[(order.indexOf(SHADER_CONFIG.outlineTopology) + 1) % order.length];
+    SHADER_CONFIG.outlineTopology = next;
+    const btn = document.getElementById('outlineModeBtn');
+    const labelMap = { '4way': '4-WAY', '8way': '8-WAY 加粗', 'none': 'OFF 無描邊' };
+    btn.textContent = `P3 鄰域: ${labelMap[next]}`;
+    btn.classList.toggle('active', next !== 'none');
+    syncShaderFlowNodes();
+    buildAllSpriteCells();
+    updateLiveStage();
+  }
+
+  function cycleOutlinePalette() {
+    const order = ['dark', 'soft', 'brass'];
+    const next = order[(order.indexOf(SHADER_CONFIG.outlineColorMode) + 1) % order.length];
+    SHADER_CONFIG.outlineColorMode = next;
+    const names = { dark: '深紫黑', soft: '柔和褐', brass: '金邊高光' };
+    document.getElementById('outlineBtn').textContent = `✒ 輪廓: ${names[next]}`;
+    buildAllSpriteCells();
+    updateLiveStage();
+  }
+
+  function toggleShaderFlag(flag) {
+    SHADER_CONFIG[flag] = !SHADER_CONFIG[flag];
+    if (flag === 'rimLight') {
+      const btn = document.getElementById('rimLightBtn');
+      btn.textContent = `P4 定向邊光: ${SHADER_CONFIG.rimLight ? 'ON' : 'OFF'}`;
+      btn.classList.toggle('active', SHADER_CONFIG.rimLight);
+      syncShaderFlowNodes();
+      buildAllSpriteCells();
+    } else if (flag === 'scanlines') {
+      const btn = document.getElementById('scanlineBtn');
+      btn.textContent = `P5 CRT掃描線: ${SHADER_CONFIG.scanlines ? 'ON' : 'OFF'}`;
+      btn.classList.toggle('active', SHADER_CONFIG.scanlines);
+      syncShaderFlowNodes();
+    }
+    updateLiveStage();
+  }
+
+  function setTheme(themeKey, btnEl) {
+    activeThemeKey = themeKey;
+    activeTheme = PALETTE_THEMES[themeKey];
+    document.querySelectorAll('#themeTabs .px-btn').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    rebuildActivePalette();
+    buildAllSpriteCells();
+    updateLiveStage();
+  }
+
+  function setWeapon(type, btnEl) {
+    weaponType = type;
+    document.querySelectorAll('#weaponTabs .px-btn').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    buildAllSpriteCells();
+    updateLiveStage();
+  }
+
+  function setHairStyle(style, btnEl) {
+    hairStyle = style;
+    document.querySelectorAll('#hairTabs .px-btn').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    buildAllSpriteCells();
+    updateLiveStage();
+  }
+
+  function randomizeVariant() {
+    const themeKeys = Object.keys(PALETTE_THEMES);
+    const weapons = ['broadsword', 'greatsword', 'spear', 'daggers'];
+    const hairs = ['ranger', 'short', 'hooded'];
+
+    const cloakSrc = PALETTE_THEMES[themeKeys[Math.floor(Math.random() * themeKeys.length)]];
+    const hairSrc = PALETTE_THEMES[themeKeys[Math.floor(Math.random() * themeKeys.length)]];
+    const bladeSrc = PALETTE_THEMES[themeKeys[Math.floor(Math.random() * themeKeys.length)]];
+
+    activeTheme = {
+      name: '隨機變體',
+      hair: [...hairSrc.hair],
+      cloak: [...cloakSrc.cloak],
+      leather: [...cloakSrc.leather],
+      metal: [...bladeSrc.metal],
+      brass: [...bladeSrc.brass],
+      blade: [...bladeSrc.blade]
+    };
+    weaponType = weapons[Math.floor(Math.random() * weapons.length)];
+    hairStyle = hairs[Math.floor(Math.random() * hairs.length)];
+
+    document.querySelectorAll('#themeTabs .px-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#weaponTabs .px-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-weapon') === weaponType);
+    });
+    document.querySelectorAll('#hairTabs .px-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-hair') === hairStyle);
+    });
+
+    rebuildActivePalette();
+    buildAllSpriteCells();
+    updateLiveStage();
+  }
+
+  function pauseAndEdit() {
+    if (isPlaying) {
+      isPlaying = false;
+      stopLoop();
+      document.getElementById('playPauseBtn').textContent = '▶ 繼續播放';
+    }
+  }
+
+  function updateCurrentPoseParam(key, val) {
+    pauseAndEdit();
+    const pose = SPRITE_SHEET[currentAnim].frames[currentFrameIdx];
+    pose[key] = val;
+    rebuildSingleFrameCell(currentAnim, currentFrameIdx);
+  }
+
+  function updateCurrentSwordAngle(val) {
+    pauseAndEdit();
+    const pose = SPRITE_SHEET[currentAnim].frames[currentFrameIdx];
+    if (!pose.frontArm) pose.frontArm = { ex: 2, ey: 4, hx: 6, hy: 5 };
+    pose.frontArm.swordAngle = val;
+    rebuildSingleFrameCell(currentAnim, currentFrameIdx);
+  }
+
+  function toggleCurrentSlashFX() {
+    pauseAndEdit();
+    const pose = SPRITE_SHEET[currentAnim].frames[currentFrameIdx];
+    if (!pose.frontArm) pose.frontArm = { ex: 2, ey: 4, hx: 6, hy: 5, swordAngle: -30 };
+    pose.frontArm.slashFX = !pose.frontArm.slashFX;
+    rebuildSingleFrameCell(currentAnim, currentFrameIdx);
+  }
+
+  function lerpNum(a, b, t) {
+    return Number(((a || 0) + ((b || 0) - (a || 0)) * t).toFixed(2));
+  }
+
+  function lerpLimb(a, b, t) {
+    if (!a && !b) return undefined;
+    const l1 = a || b;
+    const l2 = b || a;
+    const res = {
+      kx: lerpNum(l1.kx, l2.kx, t),
+      ky: lerpNum(l1.ky, l2.ky, t),
+      fx: lerpNum(l1.fx, l2.fx, t),
+      fy: lerpNum(l1.fy, l2.fy, t)
+    };
+    if (l1.footAng !== undefined || l2.footAng !== undefined) {
+      res.footAng = lerpNum(l1.footAng || 0, l2.footAng || 0, t);
+    }
+    return res;
+  }
+
+  function lerpArm(a, b, t) {
+    if (!a && !b) return undefined;
+    const r1 = a || b;
+    const r2 = b || a;
+    const res = {
+      ex: lerpNum(r1.ex, r2.ex, t),
+      ey: lerpNum(r1.ey, r2.ey, t),
+      hx: lerpNum(r1.hx, r2.hx, t),
+      hy: lerpNum(r1.hy, r2.hy, t)
+    };
+    if (r1.swordAngle !== undefined && r2.swordAngle !== undefined) {
+      res.swordAngle = Math.round(lerpNum(r1.swordAngle, r2.swordAngle, t));
+    } else if (r1.swordAngle !== undefined) {
+      res.swordAngle = r1.swordAngle;
+    } else if (r2.swordAngle !== undefined) {
+      res.swordAngle = r2.swordAngle;
+    }
+    return res;
+  }
+
+  function insertTweenFrame() {
+    pauseAndEdit();
+    const frames = SPRITE_SHEET[currentAnim].frames;
+    const nextIdx = (currentFrameIdx + 1) % frames.length;
+    const p1 = frames[currentFrameIdx];
+    const p2 = frames[nextIdx];
+
+    const tweenPose = {
+      lean: lerpNum(p1.lean, p2.lean, 0.5),
+      tx: lerpNum(p1.tx, p2.tx, 0.5),
+      ty: lerpNum(p1.ty, p2.ty, 0.5),
+      rot: Math.round(lerpNum(p1.rot, p2.rot, 0.5)),
+      cloakWave: lerpNum(p1.cloakWave, p2.cloakWave, 0.5),
+      cloakLift: lerpNum(p1.cloakLift, p2.cloakLift, 0.5),
+      cloakOpen: p1.cloakOpen || p2.cloakOpen,
+      legL: lerpLimb(p1.legL, p2.legL, 0.5),
+      legR: lerpLimb(p1.legR, p2.legR, 0.5),
+      frontArm: lerpArm(p1.frontArm, p2.frontArm, 0.5),
+      backArm: lerpArm(p1.backArm, p2.backArm, 0.5),
+      face: p1.face || p2.face
+    };
+
+    const oldBoxes = frames.map((_, i) => getBoxSpec(currentAnim, i));
+    const b1 = oldBoxes[currentFrameIdx];
+    const b2 = oldBoxes[nextIdx];
+    const tweenBox = {
+      hurt: {
+        x: Math.round(lerpNum(b1.hurt.x, b2.hurt.x, 0.5)),
+        y: Math.round(lerpNum(b1.hurt.y, b2.hurt.y, 0.5)),
+        w: Math.round(lerpNum(b1.hurt.w, b2.hurt.w, 0.5)),
+        h: Math.round(lerpNum(b1.hurt.h, b2.hurt.h, 0.5))
+      },
+      hit: {
+        x: Math.round(lerpNum(b1.hit.x, b2.hit.x, 0.5)),
+        y: Math.round(lerpNum(b1.hit.y, b2.hit.y, 0.5)),
+        w: Math.round(lerpNum(b1.hit.w, b2.hit.w, 0.5)),
+        h: Math.round(lerpNum(b1.hit.h, b2.hit.h, 0.5)),
+        active: Boolean(b1.hit.active || b2.hit.active)
+      }
+    };
+
+    frames.splice(currentFrameIdx + 1, 0, tweenPose);
+    oldBoxes.splice(currentFrameIdx + 1, 0, tweenBox);
+    oldBoxes.forEach((bx, i) => {
+      FRAME_BOXES[`${currentAnim}:${i}`] = bx;
+    });
+
+    currentFrameIdx = currentFrameIdx + 1;
+    buildAllSpriteCells();
+    updateLiveStage();
+  }
+
+  function resetCurrentAnim() {
+    SPRITE_SHEET[currentAnim].frames = JSON.parse(
+      JSON.stringify(DEFAULT_SPRITE_SNAPSHOT[currentAnim].frames)
+    );
+    Object.keys(FRAME_BOXES).forEach((k) => {
+      if (k.startsWith(`${currentAnim}:`)) delete FRAME_BOXES[k];
+    });
+    initBoxesForAnim(currentAnim);
+    currentFrameIdx = 0;
+    buildAllSpriteCells();
+    updateLiveStage();
+  }
+
+  function updateFrameBox(kind, prop, rawVal) {
+    const val = Math.max(0, Math.min(72, parseInt(rawVal, 10) || 0));
+    const boxes = getBoxSpec(currentAnim, currentFrameIdx);
+    boxes[kind][prop] = val;
+    refreshAllCellBoxOverlays();
+    updateLiveStage();
+  }
+
+  function toggleCurrentHitActive() {
+    const boxes = getBoxSpec(currentAnim, currentFrameIdx);
+    boxes.hit.active = !boxes.hit.active;
+    refreshAllCellBoxOverlays();
+    updateLiveStage();
+  }
+
+  function setAnim(animKey, btnEl) {
+    currentAnim = animKey;
+    currentFrameIdx = 0;
+    document.querySelectorAll('.anim-tabs .px-btn').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    updateLiveStage();
+  }
+
+  function selectSpecificFrame(animKey, idx) {
+    currentAnim = animKey;
+    currentFrameIdx = idx;
+    isPlaying = false;
+    stopLoop();
+    document.getElementById('playPauseBtn').textContent = '▶ 繼續播放';
+    document.querySelectorAll('.anim-tabs .px-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-anim') === animKey);
+    });
+    updateLiveStage();
+  }
+
+  function togglePlay() {
+    isPlaying = !isPlaying;
+    document.getElementById('playPauseBtn').textContent = isPlaying ? '⏸ 暫停播放' : '▶ 繼續播放';
+    if (isPlaying) {
+      scheduleLoop();
+    } else {
+      stopLoop();
+    }
+  }
+
+  function stepFrame(dir) {
+    isPlaying = false;
+    stopLoop();
+    document.getElementById('playPauseBtn').textContent = '▶ 繼續播放';
+    const len = cellMap[currentAnim].length;
+    currentFrameIdx = (currentFrameIdx + dir + len) % len;
+    updateLiveStage();
+  }
+
+  function updateFPS(val) {
+    fps = parseInt(val, 10);
+    document.getElementById('fpsLabel').textContent = `${fps} FPS`;
+  }
+
+  function toggleGrid() {
+    showGrid = !showGrid;
+    const btn = document.getElementById('gridBtn');
+    btn.textContent = `⌗ 網格: ${showGrid ? 'ON' : 'OFF'}`;
+    btn.classList.toggle('active', showGrid);
+    updateLiveStage();
+  }
+
+  function toggleOnion() {
+    showOnion = !showOnion;
+    const btn = document.getElementById('onionBtn');
+    btn.textContent = `◐ 洋蔥皮: ${showOnion ? 'ON' : 'OFF'}`;
+    btn.classList.toggle('active', showOnion);
+    updateLiveStage();
+  }
+
+  function toggleBoxes() {
+    showBoxes = !showBoxes;
+    const btn = document.getElementById('boxesBtn');
+    btn.textContent = `⊞ 碰撞框: ${showBoxes ? 'ON' : 'OFF'}`;
+    btn.classList.toggle('active', showBoxes);
+    refreshAllCellBoxOverlays();
+    updateLiveStage();
+  }
+
+  function renderAtlasToExportCanvas() {
+    const exp = document.getElementById('exportCanvas');
+    const keys = ['idle', 'run', 'slash', 'hurt'];
+    const maxCols = Math.max(...keys.map(k => cellMap[k].length));
+    exp.width = maxCols * CELL_SIZE;
+    exp.height = keys.length * CELL_SIZE;
+
+    const eCtx = exp.getContext('2d');
+    eCtx.clearRect(0, 0, exp.width, exp.height);
+
+    keys.forEach((k, rowIdx) => {
+      cellMap[k].forEach((item, colIdx) => {
+        eCtx.drawImage(item.canvas, colIdx * CELL_SIZE, rowIdx * CELL_SIZE);
+      });
+    });
+    return { exp, keys, maxCols };
+  }
+
+  function exportSpriteSheet() {
+    const { exp } = renderAtlasToExportCanvas();
+    const link = document.createElement('a');
+    link.download = `emerald_ranger_${CELL_SIZE}x${CELL_SIZE}_spritesheet.png`;
+    link.href = exp.toDataURL('image/png');
+    link.click();
+  }
+
+  function buildEngineRuntimePayload(includeAtlasDataUrl) {
+    const { exp, keys, maxCols } = renderAtlasToExportCanvas();
+    const animSpec = {};
+    keys.forEach((k, rowIdx) => {
+      animSpec[k] = {
+        row: rowIdx,
+        frameCount: SPRITE_SHEET[k].frames.length,
+        frames: SPRITE_SHEET[k].frames.map((pose, colIdx) => ({
+          index: colIdx,
+          pose,
+          boxes: getBoxSpec(k, colIdx)
+        }))
+      };
+    });
+    return {
+      engine: 'ChronoPixel-60Hz-ECS',
+      version: '2.0.0',
+      fixedTimestepHz: 60,
+      cellSize: CELL_SIZE,
+      atlasCols: maxCols,
+      atlasRows: keys.length,
+      appearance: {
+        theme: activeTheme.name,
+        weapon: weaponType,
+        hairStyle,
+        palette: ACTIVE_PALETTE
+      },
+      shaderConfig: { ...SHADER_CONFIG },
+      animations: animSpec,
+      replayTape: recordedTape.frames.length > 0 ? {
+        seed: recordedTape.seed,
+        frameCount: recordedTape.frames.length,
+        expectedCrc32: recordedTape.expectedCrc32,
+        frames: recordedTape.frames
+      } : null,
+      atlasDataUrl: includeAtlasDataUrl ? exp.toDataURL('image/png') : undefined
+    };
+  }
+
+  function exportCollisionJSON() {
+    const bundle = buildEngineRuntimePayload(false);
+    const blob = new Blob([JSON.stringify(bundle.animations, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `emerald_ranger_hitboxes.json`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportEngineRuntimeBundle() {
+    const bundle = buildEngineRuntimePayload(true);
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `chronopixel_runtime_bundle.json`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+    document.getElementById('arenaEventLog').textContent =
+      '已匯出 ChronoPixel Engine Runtime JSON（含著色管線、動作骨架、碰撞框與 Atlas）！';
+  }
+
+  async function sendBundleToEngineZone() {
+    const btn = document.getElementById('busSendBtn');
+    const prevText = btn ? btn.textContent : '';
+    if (btn) btn.textContent = '傳送中...';
+    try {
+      const bundle = buildEngineRuntimePayload(true);
+      try {
+        localStorage.setItem('chronoforge_studio_bus', JSON.stringify({ bundle, updatedAt: new Date().toISOString() }));
+      } catch {}
+      await fetch('/api/project-bus/studio-bundle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bundle }),
+      });
+      window.location.href = '/engine?bus=studio';
+    } catch (err) {
+      if (btn) btn.textContent = prevText || '🚀 傳送至引擎區';
+      document.getElementById('arenaEventLog').textContent = '傳送至跨區資產匯流排失敗，請檢查連線後再試。';
+    }
+  }
+
+  /**
+   * 單檔可執行遊戲卡匣編譯器：
+   * 將當前精靈圖集 PNG Base64、32 色主題、武器傷害與逐幀碰撞框編譯成獨立可玩迷你動作遊戲
+   */
+  function compileGameCartridge() {
+    const bundle = buildEngineRuntimePayload(true);
+    const cartridgeData = {
+      themeName: bundle.appearance.theme,
+      weapon: bundle.appearance.weapon,
+      accentHi: activeTheme.blade[2],
+      cloakHi: activeTheme.cloak[4],
+      atlasDataUrl: bundle.atlasDataUrl,
+      animations: {
+        idle: bundle.animations.idle.frames.map(f => f.boxes),
+        run: bundle.animations.run.frames.map(f => f.boxes),
+        slash: bundle.animations.slash.frames.map(f => f.boxes),
+        hurt: bundle.animations.hurt.frames.map(f => f.boxes)
+      }
+    };
+
+    const closeScript = '<' + '/script>';
+    const closeStyle = '<' + '/style>';
+    const closeBody = '<' + '/body>';
+    const closeHtml = '<' + '/html>';
+
+    const htmlParts = [
+      '<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8">',
+      '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+      `<title>${cartridgeData.themeName} // ChronoPixel Cartridge</title>`,
+      '<style>',
+      'body{margin:0;min-height:100vh;background:#09080f;color:#f5f2eb;font-family:monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;}',
+      '.frame{border:3px solid #b88a32;box-shadow:0 0 0 4px #050408;background:#12101c;padding:12px;max-width:960px;width:100%;}',
+      'canvas{width:100%;height:auto;aspect-ratio:3/1;display:block;image-rendering:pixelated;background:#0d0c16;border:2px solid #050408;}',
+      '.hud{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;margin-top:10px;font-size:13px;color:#f2cf66;}',
+      '.bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}',
+      'button{background:#2f2947;color:#fff;border:2px solid #050408;padding:8px 12px;font-family:monospace;font-weight:bold;cursor:pointer;}',
+      'button:hover{filter:brightness(1.15);}',
+      closeStyle,
+      '</head><body>',
+      '<div class="frame">',
+      `<div style="color:#f2cf66;font-weight:bold;margin-bottom:8px;">CHRONOPIXEL CARTRIDGE // ${cartridgeData.themeName} (${cartridgeData.weapon.toUpperCase()})</div>`,
+      '<canvas id="game" width="480" height="160"></canvas>',
+      '<div class="hud"><span id="stPlayer">HP 100/100</span><span id="stScore">WAVE 1 · SCORE 0 · COMBO 0</span><span id="stMsg">操作：A/D 移動 · J/空白 揮砍 · R 重開</span></div>',
+      '<div class="bar">',
+      '<button onmousedown="inp.l=1" onmouseup="inp.l=0" onmouseleave="inp.l=0">◀ 左</button>',
+      '<button onmousedown="inp.r=1" onmouseup="inp.r=0" onmouseleave="inp.r=0">右 ▶</button>',
+      '<button onclick="slash()">⚔ 揮砍 (J)</button>',
+      '<button onclick="showBox=!showBox">⊞ 切換判定框</button>',
+      '<button onclick="resetGame()">↺ 重新開始 (R)</button>',
+      '</div></div>',
+      '<script>',
+      `const CART=${JSON.stringify(cartridgeData)};`,
+      'const cvs=document.getElementById("game"),ctx=cvs.getContext("2d");',
+      'const img=new Image();img.src=CART.atlasDataUrl;',
+      'const ROW={idle:0,run:1,slash:2,hurt:3};',
+      'const inp={l:0,r:0};let showBox=false,seed=0x9E3779B9;',
+      'function rnd(){seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return (seed>>>0)/4294967296;}',
+      'const G={px:110,face:1,hp:100,st:"idle",fi:0,tk:0,hitDone:false,inv:0,score:0,combo:0,wave:1,hs:0,shk:0,dx:350,dvx:0,dhp:120,dmax:120,dfl:0,shootCd:95,proj:[],pts:[],pops:[]};',
+      'function resetGame(){Object.assign(G,{px:110,face:1,hp:100,st:"idle",fi:0,tk:0,hitDone:false,inv:0,score:0,combo:0,wave:1,hs:0,shk:0,dx:350,dvx:0,dhp:120,dmax:120,dfl:0,shootCd:95,proj:[],pts:[],pops:[]});}',
+      'function slash(){if(G.st==="hurt")return;G.st="slash";G.fi=0;G.tk=0;G.hitDone=false;}',
+      'function wBox(ox,fc,b){const sl=ox-36,st=136-64,bx=fc===1?b.x:72-b.x-b.w;return{x:Math.round(sl+bx),y:Math.round(st+b.y),w:b.w,h:b.h};}',
+      'function ov(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}',
+      'window.addEventListener("keydown",e=>{if(e.key==="a"||e.key==="A"||e.key==="ArrowLeft")inp.l=1;if(e.key==="d"||e.key==="D"||e.key==="ArrowRight")inp.r=1;if(e.key==="j"||e.key==="J"||e.key===" "){e.preventDefault();slash();}if(e.key==="r"||e.key==="R")resetGame();});',
+      'window.addEventListener("keyup",e=>{if(e.key==="a"||e.key==="A"||e.key==="ArrowLeft")inp.l=0;if(e.key==="d"||e.key==="D"||e.key==="ArrowRight")inp.r=0;});',
+      'function step(){',
+      '  if(G.hs>0){G.hs--;G.shk*=0.8;return;}',
+      '  if(G.inv>0)G.inv--;if(G.dfl>0)G.dfl--;G.shk=G.shk>0.2?G.shk*0.78:0;',
+      '  if(G.st!=="slash"&&G.st!=="hurt"){let vx=0;if(inp.l){vx-=2.5;G.face=-1;}if(inp.r){vx+=2.5;G.face=1;}G.px=Math.max(36,Math.min(444,G.px+vx));const ns=vx?"run":"idle";if(ns!==G.st){G.st=ns;G.fi=0;G.tk=0;}}else if(G.st==="slash"&&G.fi===3){G.px=Math.max(36,Math.min(444,G.px+G.face*1.3));}',
+      '  const list=CART.animations[G.st];G.tk++;if(G.tk>=(G.st==="slash"?4:6)){G.tk=0;G.fi++;if(G.fi>=list.length){if(G.st==="slash"||G.st==="hurt"){G.st="idle";G.fi=0;}else G.fi=0;}}G.fi%=list.length;',
+      '  G.dx=Math.max(200,Math.min(440,G.dx+G.dvx));G.dvx*=0.72;',
+      '  G.shootCd--;if(G.shootCd<=0){G.shootCd=Math.max(45,110-G.wave*10);G.proj.push({x:G.dx-14,y:110,vx:-2.6-G.wave*0.25});}',
+      '  const bx=list[G.fi],pHu=wBox(G.px,G.face,bx.hurt),pHi=wBox(G.px,G.face,bx.hit),dHu={x:Math.round(G.dx-13),y:84,w:26,h:52};',
+      '  if(G.st==="slash"&&bx.hit.active&&!G.hitDone&&ov(pHi,dHu)){G.hitDone=true;G.combo++;const dmg=CART.weapon==="greatsword"?48:34;G.dhp=Math.max(0,G.dhp-dmg);G.score+=dmg*G.combo;G.dfl=5;G.dvx=G.face*3.6;G.hs=4;G.shk=3.5;for(let i=0;i<10;i++)G.pts.push({x:dHu.x+12,y:104,vx:(rnd()-0.2)*4*G.face,vy:(rnd()-0.8)*3.5,life:18});G.pops.push({x:dHu.x,y:78,t:"-"+dmg,l:32,c:"#ffe36e"});if(G.dhp===0){G.wave++;G.dmax=120+G.wave*40;G.dhp=G.dmax;G.pops.push({x:dHu.x-8,y:66,t:"WAVE "+G.wave,l:44,c:"#4ade80"});}}',
+      '  for(let i=G.proj.length-1;i>=0;i--){const pr=G.proj[i];pr.x+=pr.vx;if(G.st==="slash"&&bx.hit.active&&ov(pHi,{x:pr.x-4,y:pr.y-4,w:8,h:8})){G.proj.splice(i,1);G.score+=50;G.pops.push({x:pr.x,y:pr.y-8,t:"PARRY +50",l:30,c:"#38bdf8"});continue;}if(G.inv===0&&G.st!=="hurt"&&ov({x:pr.x-4,y:pr.y-4,w:8,h:8},pHu)){G.proj.splice(i,1);G.st="hurt";G.fi=0;G.tk=0;G.inv=45;G.combo=0;G.hp=Math.max(0,G.hp-15);G.shk=4;if(G.hp===0){G.hp=100;G.wave=1;G.score=0;}}else if(pr.x<-12)G.proj.splice(i,1);}',
+      '  for(let i=G.pts.length-1;i>=0;i--){const p=G.pts[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.15;if(--p.life<=0)G.pts.splice(i,1);}',
+      '  for(let i=G.pops.length-1;i>=0;i--){const p=G.pops[i];p.y-=0.4;if(--p.l<=0)G.pops.splice(i,1);}',
+      '}',
+      'function draw(){',
+      '  ctx.save();if(G.shk)ctx.translate(Math.round((rnd()-0.5)*G.shk*2),Math.round((rnd()-0.5)*G.shk*2));',
+      '  ctx.fillStyle="#0d0c16";ctx.fillRect(0,0,480,160);ctx.fillStyle="#1d1a2b";ctx.fillRect(0,136,480,24);ctx.fillStyle="#2f2947";ctx.fillRect(0,136,480,2);',
+      '  const dx=Math.round(G.dx);ctx.fillStyle=G.dfl>0?"#fff":"#694028";ctx.fillRect(dx-5,86,10,50);ctx.fillStyle=G.dfl>0?"#fff":"#8c583a";ctx.fillRect(dx-12,96,24,24);ctx.fillStyle="#120d17";ctx.fillRect(dx-18,74,36,5);ctx.fillStyle="#4ade80";ctx.fillRect(dx-17,75,Math.round(34*G.dhp/G.dmax),3);',
+      '  if(img.complete&&(G.inv===0||G.inv%4<2)){ctx.save();ctx.translate(Math.round(G.px),72);ctx.scale(G.face,1);ctx.drawImage(img,G.fi*72,ROW[G.st]*72,72,72,-36,0,72,72);ctx.restore();}',
+      '  G.proj.forEach(p=>{ctx.fillStyle="#f87171";ctx.fillRect(Math.round(p.x-4),Math.round(p.y-4),8,8);});',
+      '  if(showBox){const bx=CART.animations[G.st][G.fi],h=wBox(G.px,G.face,bx.hurt);ctx.strokeStyle="#4ade80";ctx.strokeRect(h.x+0.5,h.y+0.5,h.w-1,h.h-1);if(bx.hit.active){const hb=wBox(G.px,G.face,bx.hit);ctx.strokeStyle="#f87171";ctx.strokeRect(hb.x+0.5,hb.y+0.5,hb.w-1,hb.h-1);}}',
+      '  G.pts.forEach(p=>{ctx.fillStyle=CART.accentHi;ctx.fillRect(Math.round(p.x),Math.round(p.y),2,2);});',
+      '  ctx.font="bold 10px monospace";G.pops.forEach(p=>{ctx.fillStyle=p.c;ctx.fillText(p.t,Math.round(p.x),Math.round(p.y));});',
+      '  ctx.restore();',
+      '  document.getElementById("stPlayer").textContent="HP "+G.hp+"/100";',
+      '  document.getElementById("stScore").textContent="WAVE "+G.wave+" · SCORE "+G.score+" · COMBO "+G.combo;',
+      '}',
+      'let acc=0,last=performance.now();',
+      'function loop(now){acc=Math.min(100,acc+(now-last));last=now;while(acc>=1000/60){step();acc-=1000/60;}draw();requestAnimationFrame(loop);}',
+      'requestAnimationFrame(loop);',
+      closeScript,
+      closeBody,
+      closeHtml
+    ];
+
+    const blob = new Blob([htmlParts.join('')], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `emerald_ranger_cartridge.html`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+    document.getElementById('arenaEventLog').textContent =
+      '卡匣編譯成功！已輸出獨立單檔 emerald_ranger_cartridge.html（含波次挑戰與格擋彈幕）。';
+  }
+
+  // ============================================================================
+  // 8. ChronoPixel 60Hz Fixed-Timestep ECS 微縮引擎 ＋ 確定性重播核心
+  // ============================================================================
+  const arenaCanvas = document.getElementById('arenaCanvas');
+  const arenaCtx = arenaCanvas.getContext('2d');
+  const ARENA_W = 480;
+  const ARENA_H = 160;
+  const GROUND_Y = 136;
+  const FIXED_DT_MS = 1000 / 60;
+
+  let soundEnabled = true;
+  let audioCtx = null;
+
+  function ensureAudio() {
+    if (!soundEnabled) return null;
+    if (!audioCtx) {
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (Ctor) audioCtx = new Ctor();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  function playSoundFX(kind) {
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    if (kind === 'swing') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(340, now);
+      osc.frequency.exponentialRampToValueAtTime(110, now + 0.09);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.095);
+    } else if (kind === 'hit') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(195, now);
+      osc.frequency.exponentialRampToValueAtTime(52, now + 0.11);
+      gain.gain.setValueAtTime(0.14, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.13);
+
+      const bufSize = Math.floor(ctx.sampleRate * 0.055);
+      const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const ch = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) {
+        ch[i] = (Math.random() * 2 - 1) * (1 - i / bufSize);
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = buf;
+      const nGain = ctx.createGain();
+      nGain.gain.setValueAtTime(0.11, now);
+      nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+      noise.connect(nGain);
+      nGain.connect(ctx.destination);
+      noise.start(now);
+    } else if (kind === 'hurt') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(42, now + 0.18);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    }
+  }
+
+  function toggleArenaSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById('soundBtn');
+    btn.textContent = `🔊 音效: ${soundEnabled ? 'ON' : 'OFF'}`;
+    btn.classList.toggle('active', soundEnabled);
+  }
+
+  // Xorshift32 確定性偽隨機數產生器
+  function xorshift32(world) {
+    let x = world.prngState >>> 0;
+    if (x === 0) x = 0xCAFE2026;
+    x ^= x << 13;
+    x ^= x >>> 17;
+    x ^= x << 5;
+    world.prngState = x >>> 0;
+    return world.prngState / 4294967296;
+  }
+
+  // IEEE 802.3 CRC32 狀態指紋雜湊計算器
+  const CRC_TABLE = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) {
+      c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    }
+    CRC_TABLE[n] = c >>> 0;
+  }
+
+  function computeWorldCRC32(w) {
+    const pT = w.transforms.get(w.playerId);
+    const pS = w.sprites.get(w.playerId);
+    const pC = w.combatants.get(w.playerId);
+    const dT = w.transforms.get(w.dummyId);
+    const dC = w.combatants.get(w.dummyId);
+    const stateInts = [
+      w.tick,
+      w.prngState >>> 0,
+      Math.round(pT.x * 100),
+      pT.facing,
+      pS.frameIdx,
+      pC.hp,
+      Math.round(dT.x * 100),
+      dC.hp,
+      w.combo,
+      w.projectiles.size,
+      w.particles.size
+    ];
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < stateInts.length; i++) {
+      const v = stateInts[i] | 0;
+      crc = CRC_TABLE[(crc ^ (v & 0xFF)) & 0xFF] ^ (crc >>> 8);
+      crc = CRC_TABLE[(crc ^ ((v >> 8) & 0xFF)) & 0xFF] ^ (crc >>> 8);
+      crc = CRC_TABLE[(crc ^ ((v >> 16) & 0xFF)) & 0xFF] ^ (crc >>> 8);
+      crc = CRC_TABLE[(crc ^ ((v >> 24) & 0xFF)) & 0xFF] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  const INPUT_BIT = { LEFT: 1, RIGHT: 2, SLASH: 4, PROJ: 8 };
+  const liveInputFlags = { left: false, right: false, slashPulse: false, projPulse: false };
+  const PRESET_SEEDS = [0xCAFE2026, 0x1337BEEF, 0x7777AAAA, 0x20261113];
+  let seedIdx = 0;
+
+  let enginePaused = false;
+  let engineSpeed = 1;
+  let engineMode = 'LIVE'; // 'LIVE' | 'RECORD' | 'REPLAY'
+  const recordedTape = { seed: PRESET_SEEDS[0], frames: [], expectedCrc32: 0 };
+  let replayCursor = 0;
+
+  function createECSWorld(seed) {
+    const world = {
+      nextEid: 1,
+      tick: 0,
+      prngState: seed >>> 0,
+      hitstop: 0,
+      shake: 0,
+      combo: 0,
+      comboResetTimer: 0,
+      stateCrc32: 0,
+      transforms: new Map(),
+      velocities: new Map(),
+      sprites: new Map(),
+      colliders: new Map(),
+      combatants: new Map(),
+      projectiles: new Map(),
+      particles: new Map(),
+      popups: new Map(),
+      playerId: 0,
+      dummyId: 0
+    };
+
+    const pid = world.nextEid++;
+    world.playerId = pid;
+    world.transforms.set(pid, { x: 130, y: GROUND_Y, facing: 1, tilt: 0 });
+    world.velocities.set(pid, { vx: 0, vy: 0 });
+    world.sprites.set(pid, { state: 'idle', frameIdx: 0, animTick: 0 });
+    world.combatants.set(pid, { hp: 100, maxHp: 100, invuln: 0, attackDidHit: false, queuedSlash: false, flash: 0 });
+
+    const did = world.nextEid++;
+    world.dummyId = did;
+    world.transforms.set(did, { x: 330, y: GROUND_Y, facing: -1, tilt: 0 });
+    world.velocities.set(did, { vx: 0, vy: 0 });
+    world.colliders.set(did, { w: 26, h: 52, offsetX: -13, offsetY: -52 });
+    world.combatants.set(did, { hp: 300, maxHp: 300, invuln: 0, attackDidHit: false, queuedSlash: false, flash: 0 });
+
+    world.stateCrc32 = computeWorldCRC32(world);
+    return world;
+  }
+
+  let ecsWorld = createECSWorld(PRESET_SEEDS[0]);
+
+  function worldBoxFromCell(originX, originY, facing, box) {
+    const spriteLeft = originX - 36;
+    const spriteTop = originY - 64;
+    const bx = facing === 1 ? box.x : CELL_SIZE - box.x - box.w;
+    return {
+      x: Math.round(spriteLeft + bx),
+      y: Math.round(spriteTop + box.y),
+      w: box.w,
+      h: box.h
+    };
+  }
+
+  function aabbOverlap(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  function ecsSpawnProjectile(w) {
+    const eid = w.nextEid++;
+    w.transforms.set(eid, { x: ARENA_W - 24, y: GROUND_Y - 26, facing: -1, tilt: 0 });
+    w.velocities.set(eid, { vx: -3.4, vy: 0 });
+    w.projectiles.set(eid, { w: 10, h: 10 });
+    document.getElementById('arenaEventLog').textContent = '敵方測試彈發射！驗證 Hurtbox 確定性受擊。';
+  }
+
+  function ecsSpawnSparks(w, x, y, colA, colB, count, dir) {
+    for (let i = 0; i < count; i++) {
+      const eid = w.nextEid++;
+      const ang = (xorshift32(w) - 0.5) * Math.PI * 1.4;
+      const spd = 1.4 + xorshift32(w) * 3.2;
+      w.transforms.set(eid, { x, y, facing: 1, tilt: 0 });
+      w.velocities.set(eid, { vx: Math.cos(ang) * spd * dir, vy: Math.sin(ang) * spd - 1.0 });
+      w.particles.set(eid, {
+        life: 14 + Math.floor(xorshift32(w) * 10),
+        color: i % 2 === 0 ? colA : colB,
+        size: i % 3 === 0 ? 3 : 2
+      });
+    }
+  }
+
+  function ecsSpawnPopup(w, x, y, text, color, life) {
+    const eid = w.nextEid++;
+    w.popups.set(eid, { x, y, text, color, life });
+  }
+
+  function sampleCurrentInputMask() {
+    let mask = 0;
+    if (liveInputFlags.left) mask |= INPUT_BIT.LEFT;
+    if (liveInputFlags.right) mask |= INPUT_BIT.RIGHT;
+    if (liveInputFlags.slashPulse) { mask |= INPUT_BIT.SLASH; liveInputFlags.slashPulse = false; }
+    if (liveInputFlags.projPulse) { mask |= INPUT_BIT.PROJ; liveInputFlags.projPulse = false; }
+    return mask;
+  }
+
+  // ECS 固定步長管線（單 Tick 更新）
+  function stepECSTick(w) {
+    let mask = 0;
+    if (engineMode === 'REPLAY') {
+      if (replayCursor < recordedTape.frames.length) {
+        mask = recordedTape.frames[replayCursor++];
+      } else {
+        engineMode = 'LIVE';
+        const matchOk = w.stateCrc32 === recordedTape.expectedCrc32;
+        document.getElementById('replayTapeBtn').classList.remove('active');
+        document.getElementById('arenaEventLog').textContent = matchOk
+          ? `重播驗證完成！CRC32 指紋完全一致 (0x${w.stateCrc32.toString(16).toUpperCase().padStart(8, '0')})。`
+          : `重播結束！末幀 CRC32: 0x${w.stateCrc32.toString(16).toUpperCase().padStart(8, '0')}。`;
+      }
+    } else {
+      mask = sampleCurrentInputMask();
+      if (engineMode === 'RECORD') {
+        recordedTape.frames.push(mask);
+        recordedTape.expectedCrc32 = w.stateCrc32;
+      }
+    }
+
+    w.tick++;
+
+    // Hitstop 頓幀期間僅衰減微震
+    if (w.hitstop > 0) {
+      w.hitstop--;
+      if (w.shake > 0) w.shake *= 0.82;
+      w.stateCrc32 = computeWorldCRC32(w);
+      return;
+    }
+
+    const pT = w.transforms.get(w.playerId);
+    const pV = w.velocities.get(w.playerId);
+    const pS = w.sprites.get(w.playerId);
+    const pC = w.combatants.get(w.playerId);
+    const dT = w.transforms.get(w.dummyId);
+    const dV = w.velocities.get(w.dummyId);
+    const dC = w.combatants.get(w.dummyId);
+
+    if (pC.invuln > 0) pC.invuln--;
+    if (dC.flash > 0) dC.flash--;
+    w.shake = w.shake > 0.2 ? w.shake * 0.78 : 0;
+
+    if (w.comboResetTimer > 0) {
+      w.comboResetTimer--;
+      if (w.comboResetTimer === 0) w.combo = 0;
+    }
+
+    // System 1: Input Dispatch
+    if ((mask & INPUT_BIT.PROJ) !== 0) {
+      ecsSpawnProjectile(w);
+    }
+    if ((mask & INPUT_BIT.SLASH) !== 0 && pS.state !== 'hurt') {
+      if (pS.state === 'slash' && pS.frameIdx < 4) {
+        pC.queuedSlash = true;
+      } else {
+        pS.state = 'slash';
+        pS.frameIdx = 0;
+        pS.animTick = 0;
+        pC.attackDidHit = false;
+        pC.queuedSlash = false;
+        playSoundFX('swing');
+      }
+    }
+
+    // System 2: Movement & Anim State
+    if (pS.state !== 'slash' && pS.state !== 'hurt') {
+      let vx = 0;
+      if ((mask & INPUT_BIT.LEFT) !== 0) { vx -= 2.4; pT.facing = -1; }
+      if ((mask & INPUT_BIT.RIGHT) !== 0) { vx += 2.4; pT.facing = 1; }
+      pV.vx = vx;
+      pT.x = Math.max(36, Math.min(ARENA_W - 36, pT.x + pV.vx));
+      const nextState = vx !== 0 ? 'run' : 'idle';
+      if (nextState !== pS.state) {
+        pS.state = nextState;
+        pS.frameIdx = 0;
+        pS.animTick = 0;
+      }
+    } else if (pS.state === 'slash' && pS.frameIdx === 3) {
+      pT.x = Math.max(36, Math.min(ARENA_W - 36, pT.x + pT.facing * 1.4));
+    }
+
+    const frames = cellMap[pS.state];
+    const stepTicks = pS.state === 'slash' ? 4 : 6;
+    pS.animTick++;
+    if (pS.animTick >= stepTicks) {
+      pS.animTick = 0;
+      pS.frameIdx++;
+      if (pS.frameIdx >= frames.length) {
+        if (pS.state === 'slash' && pC.queuedSlash) {
+          pS.frameIdx = 0;
+          pC.attackDidHit = false;
+          pC.queuedSlash = false;
+          playSoundFX('swing');
+        } else if (pS.state === 'slash' || pS.state === 'hurt') {
+          pS.state = 'idle';
+          pS.frameIdx = 0;
+          pC.attackDidHit = false;
+          pC.queuedSlash = false;
+        } else {
+          pS.frameIdx = 0;
+        }
+      }
+    }
+    pS.frameIdx = pS.frameIdx % frames.length;
+
+    // System 3: Dummy Physics
+    dT.x += dV.vx;
+    if (dT.x > ARENA_W - 40) {
+      dT.x = ARENA_W - 40;
+      dV.vx = -Math.abs(dV.vx) * 0.5;
+    } else if (dT.x < 220) {
+      dT.x = 220;
+      dV.vx = Math.abs(dV.vx) * 0.5;
+    }
+    dV.vx *= 0.72;
+    dT.tilt *= 0.85;
+
+    // System 4: AABB Combat Resolution
+    const playerBoxes = getBoxSpec(pS.state, pS.frameIdx);
+    const pHurtWorld = worldBoxFromCell(pT.x, GROUND_Y, pT.facing, playerBoxes.hurt);
+    const pHitWorld = worldBoxFromCell(pT.x, GROUND_Y, pT.facing, playerBoxes.hit);
+    const dCol = w.colliders.get(w.dummyId);
+    const dummyHurtWorld = {
+      x: Math.round(dT.x + dCol.offsetX),
+      y: Math.round(dT.y + dCol.offsetY),
+      w: dCol.w,
+      h: dCol.h
+    };
+
+    if (pS.state === 'slash' && playerBoxes.hit.active && !pC.attackDidHit) {
+      if (aabbOverlap(pHitWorld, dummyHurtWorld)) {
+        pC.attackDidHit = true;
+        w.combo++;
+        w.comboResetTimer = 140;
+        const dmg = weaponType === 'greatsword' ? 48 : weaponType === 'spear' ? 38 : 32;
+        dC.hp = Math.max(0, dC.hp - dmg);
+        dC.flash = 6;
+        dV.vx = pT.facing * (weaponType === 'greatsword' ? 4.8 : 3.2);
+        dT.tilt = pT.facing * 16;
+        w.hitstop = 4;
+        w.shake = 3.5;
+        playSoundFX('hit');
+
+        const hitX = Math.round((pHitWorld.x + pHitWorld.w * 0.5 + dummyHurtWorld.x + dummyHurtWorld.w * 0.5) * 0.5);
+        const hitY = Math.round(dummyHurtWorld.y + 20);
+        ecsSpawnSparks(w, hitX, hitY, activeTheme.blade[2], '#ffffff', 12, pT.facing);
+        ecsSpawnPopup(w, dummyHurtWorld.x + 8, dummyHurtWorld.y - 4, `-${dmg}`, '#ffe36e', 36);
+
+        document.getElementById('arenaEventLog').textContent =
+          `Tick #${w.tick} 命中！SLASH #${pS.frameIdx + 1} Hitbox 重疊木樁，造成 ${dmg} 傷害`;
+
+        if (dC.hp === 0) {
+          dC.hp = dC.maxHp;
+          ecsSpawnPopup(w, dummyHurtWorld.x - 4, dummyHurtWorld.y - 16, 'RESPAWN!', '#4ade80', 44);
+        }
+      }
+    }
+
+    // 敵方測試彈 vs 玩家 Hurtbox
+    for (const [eid, pr] of w.projectiles.entries()) {
+      const tr = w.transforms.get(eid);
+      const vl = w.velocities.get(eid);
+      tr.x += vl.vx;
+      const prBox = { x: Math.round(tr.x - pr.w / 2), y: Math.round(tr.y - pr.h / 2), w: pr.w, h: pr.h };
+      if (pC.invuln === 0 && pS.state !== 'hurt' && aabbOverlap(prBox, pHurtWorld)) {
+        w.projectiles.delete(eid);
+        w.transforms.delete(eid);
+        w.velocities.delete(eid);
+        pS.state = 'hurt';
+        pS.frameIdx = 0;
+        pS.animTick = 0;
+        pC.invuln = 45;
+        pC.hp = Math.max(0, pC.hp - 15);
+        if (pC.hp === 0) pC.hp = pC.maxHp;
+        w.hitstop = 3;
+        w.shake = 4.0;
+        playSoundFX('hurt');
+        ecsSpawnSparks(w, pHurtWorld.x + pHurtWorld.w / 2, pHurtWorld.y + 18, '#f87171', '#ffe36e', 10, -pT.facing);
+        ecsSpawnPopup(w, pHurtWorld.x, pHurtWorld.y - 6, '-15 HURT', '#f87171', 38);
+        document.getElementById('arenaEventLog').textContent =
+          `Tick #${w.tick} 受擊！測試彈命中角色 Hurtbox，觸發 HURT/KO 動畫。`;
+      } else if (tr.x < -16) {
+        w.projectiles.delete(eid);
+        w.transforms.delete(eid);
+        w.velocities.delete(eid);
+      }
+    }
+
+    // System 5: Particle & Popup Lifetime
+    for (const [eid, pt] of w.particles.entries()) {
+      const tr = w.transforms.get(eid);
+      const vl = w.velocities.get(eid);
+      tr.x += vl.vx;
+      tr.y += vl.vy;
+      vl.vy += 0.16;
+      pt.life--;
+      if (pt.life <= 0) {
+        w.particles.delete(eid);
+        w.transforms.delete(eid);
+        w.velocities.delete(eid);
+      }
+    }
+    for (const [eid, pp] of w.popups.entries()) {
+      pp.y -= 0.45;
+      pp.life--;
+      if (pp.life <= 0) w.popups.delete(eid);
+    }
+
+    w.stateCrc32 = computeWorldCRC32(w);
+    if (engineMode === 'RECORD') {
+      recordedTape.expectedCrc32 = w.stateCrc32;
+    }
+  }
+
+  function renderArenaScene(w) {
+    const pT = w.transforms.get(w.playerId);
+    const pS = w.sprites.get(w.playerId);
+    const pC = w.combatants.get(w.playerId);
+    const dT = w.transforms.get(w.dummyId);
+    const dC = w.combatants.get(w.dummyId);
+
+    arenaCtx.save();
+    const sx = w.shake ? Math.round((xorshift32(w) - 0.5) * w.shake * 2) : 0;
+    const sy = w.shake ? Math.round((xorshift32(w) - 0.5) * w.shake * 2) : 0;
+    arenaCtx.translate(sx, sy);
+
+    arenaCtx.fillStyle = '#0d0c16';
+    arenaCtx.fillRect(0, 0, ARENA_W, ARENA_H);
+    arenaCtx.fillStyle = 'rgba(242, 207, 102, 0.25)';
+    for (let i = 0; i < 24; i++) {
+      arenaCtx.fillRect((i * 53 + 17) % ARENA_W, (i * 29 + 11) % (GROUND_Y - 24), 1, 1);
+    }
+
+    arenaCtx.fillStyle = '#1d1a2b';
+    arenaCtx.fillRect(0, GROUND_Y, ARENA_W, ARENA_H - GROUND_Y);
+    arenaCtx.fillStyle = '#2f2947';
+    arenaCtx.fillRect(0, GROUND_Y, ARENA_W, 2);
+    for (let gx = 0; gx < ARENA_W; gx += 24) {
+      arenaCtx.fillStyle = '#13111c';
+      arenaCtx.fillRect(gx, GROUND_Y + 2, 1, ARENA_H - GROUND_Y);
+    }
+
+    const dx = Math.round(dT.x);
+    arenaCtx.save();
+    arenaCtx.translate(dx, GROUND_Y);
+    arenaCtx.rotate((dT.tilt * Math.PI) / 180);
+    arenaCtx.fillStyle = 'rgba(0,0,0,0.4)';
+    arenaCtx.fillRect(-14, -2, 28, 4);
+    arenaCtx.fillStyle = dC.flash > 0 ? '#ffffff' : '#694028';
+    arenaCtx.fillRect(-5, -50, 10, 48);
+    arenaCtx.fillStyle = dC.flash > 0 ? '#ffffff' : '#8c583a';
+    arenaCtx.fillRect(-12, -40, 24, 24);
+    arenaCtx.strokeStyle = '#120d17';
+    arenaCtx.lineWidth = 1;
+    arenaCtx.strokeRect(-12.5, -40.5, 25, 25);
+    arenaCtx.fillStyle = dC.flash > 0 ? '#ffe36e' : '#b91c1c';
+    arenaCtx.fillRect(-4, -32, 8, 8);
+    arenaCtx.restore();
+
+    const hpPct = dC.hp / dC.maxHp;
+    arenaCtx.fillStyle = '#120d17';
+    arenaCtx.fillRect(dx - 18, GROUND_Y - 62, 36, 5);
+    arenaCtx.fillStyle = '#4ade80';
+    arenaCtx.fillRect(dx - 17, GROUND_Y - 61, Math.round(34 * hpPct), 3);
+
+    const frames = cellMap[pS.state];
+    const spriteCanvas = frames[pS.frameIdx % frames.length].canvas;
+    if (pC.invuln === 0 || pC.invuln % 4 < 2) {
+      arenaCtx.save();
+      arenaCtx.translate(Math.round(pT.x), GROUND_Y - 64);
+      arenaCtx.scale(pT.facing, 1);
+      arenaCtx.drawImage(spriteCanvas, -36, 0);
+      arenaCtx.restore();
+    }
+
+    for (const [eid, pr] of w.projectiles.entries()) {
+      const tr = w.transforms.get(eid);
+      arenaCtx.fillStyle = '#f87171';
+      arenaCtx.fillRect(Math.round(tr.x - 4), Math.round(tr.y - 4), 8, 8);
+      arenaCtx.fillStyle = '#ffe36e';
+      arenaCtx.fillRect(Math.round(tr.x - 2), Math.round(tr.y - 2), 4, 4);
+    }
+
+    if (showBoxes) {
+      const playerBoxes = getBoxSpec(pS.state, pS.frameIdx % frames.length);
+      const pHurt = worldBoxFromCell(pT.x, GROUND_Y, pT.facing, playerBoxes.hurt);
+      const pHit = worldBoxFromCell(pT.x, GROUND_Y, pT.facing, playerBoxes.hit);
+      const dCol = w.colliders.get(w.dummyId);
+      const dHurt = { x: Math.round(dT.x + dCol.offsetX), y: Math.round(dT.y + dCol.offsetY), w: dCol.w, h: dCol.h };
+
+      arenaCtx.strokeStyle = '#4ade80';
+      arenaCtx.lineWidth = 1;
+      arenaCtx.strokeRect(pHurt.x + 0.5, pHurt.y + 0.5, pHurt.w - 1, pHurt.h - 1);
+      arenaCtx.strokeRect(dHurt.x + 0.5, dHurt.y + 0.5, dHurt.w - 1, dHurt.h - 1);
+
+      if (playerBoxes.hit.active) {
+        arenaCtx.fillStyle = 'rgba(248, 113, 113, 0.28)';
+        arenaCtx.fillRect(pHit.x, pHit.y, pHit.w, pHit.h);
+        arenaCtx.strokeStyle = '#f87171';
+        arenaCtx.strokeRect(pHit.x + 0.5, pHit.y + 0.5, pHit.w - 1, pHit.h - 1);
+      }
+    }
+
+    for (const [eid, pt] of w.particles.entries()) {
+      const tr = w.transforms.get(eid);
+      arenaCtx.fillStyle = pt.color;
+      arenaCtx.fillRect(Math.round(tr.x), Math.round(tr.y), pt.size, pt.size);
+    }
+    arenaCtx.font = 'bold 10px monospace';
+    for (const pp of w.popups.values()) {
+      arenaCtx.fillStyle = '#000';
+      arenaCtx.fillText(pp.text, Math.round(pp.x) + 1, Math.round(pp.y) + 1);
+      arenaCtx.fillStyle = pp.color;
+      arenaCtx.fillText(pp.text, Math.round(pp.x), Math.round(pp.y));
+    }
+
+    if (SHADER_CONFIG.scanlines) {
+      arenaCtx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+      for (let y = 1; y < ARENA_H; y += 2) {
+        arenaCtx.fillRect(0, y, ARENA_W, 1);
+      }
+    }
+
+    arenaCtx.restore();
+
+    // 更新 HUD 與核心遙測
+    const entityCount = 2 + w.projectiles.size + w.particles.size + w.popups.size;
+    document.getElementById('arenaPlayerStat').textContent =
+      `PLAYER HP ${pC.hp}/${pC.maxHp} · STATE: ${pS.state.toUpperCase()}`;
+    document.getElementById('arenaDummyStat').textContent =
+      `DUMMY HP ${dC.hp}/${dC.maxHp} · COMBO: ${w.combo}`;
+    document.getElementById('kernTick').textContent = `TICK: ${w.tick}`;
+    document.getElementById('kernEntities').textContent = `ENTITIES: ${entityCount}`;
+    document.getElementById('kernSeed').textContent =
+      `SEED: 0x${PRESET_SEEDS[seedIdx].toString(16).toUpperCase()}`;
+    document.getElementById('kernCrc').textContent =
+      `CRC32: 0x${w.stateCrc32.toString(16).toUpperCase().padStart(8, '0')}`;
+    document.getElementById('kernTapeStat').textContent =
+      engineMode === 'RECORD'
+        ? `REC: ${recordedTape.frames.length}F`
+        : engineMode === 'REPLAY'
+          ? `REPLAY: ${replayCursor}/${recordedTape.frames.length}F`
+          : recordedTape.frames.length > 0
+            ? `TAPE: ${recordedTape.frames.length}F READY`
+            : 'TAPE: EMPTY';
+  }
+
+  function queueLiveSlash() {
+    liveInputFlags.slashPulse = true;
+  }
+
+  function queueLiveProjectile() {
+    liveInputFlags.projPulse = true;
+  }
+
+  function resetEngineWorld() {
+    engineMode = 'LIVE';
+    replayCursor = 0;
+    document.getElementById('recTapeBtn').classList.remove('crimson');
+    document.getElementById('recTapeBtn').textContent = '● 錄製輸入磁帶';
+    document.getElementById('replayTapeBtn').classList.remove('active');
+    ecsWorld = createECSWorld(PRESET_SEEDS[seedIdx]);
+    document.getElementById('arenaEventLog').textContent = 'ECS 世界已重置，確定性種子已同步！';
+    renderArenaScene(ecsWorld);
+  }
+
+  function toggleRecordTape() {
+    const recBtn = document.getElementById('recTapeBtn');
+    if (engineMode === 'RECORD') {
+      engineMode = 'LIVE';
+      recBtn.classList.remove('crimson');
+      recBtn.textContent = '● 錄製輸入磁帶';
+      document.getElementById('replayTapeBtn').textContent = `▶ 重播驗證 (${recordedTape.frames.length}F)`;
+      document.getElementById('arenaEventLog').textContent =
+        `磁帶錄製結束！共 ${recordedTape.frames.length} 幀，預期 CRC32: 0x${recordedTape.expectedCrc32.toString(16).toUpperCase().padStart(8, '0')}`;
+    } else {
+      enginePaused = false;
+      document.getElementById('enginePauseBtn').textContent = '⏸ 暫停内核';
+      document.getElementById('enginePauseBtn').classList.remove('active');
+      recordedTape.seed = PRESET_SEEDS[seedIdx];
+      recordedTape.frames = [];
+      recordedTape.expectedCrc32 = 0;
+      ecsWorld = createECSWorld(recordedTape.seed);
+      engineMode = 'RECORD';
+      recBtn.classList.add('crimson');
+      recBtn.textContent = '■ 停止錄製';
+      document.getElementById('replayTapeBtn').classList.remove('active');
+      document.getElementById('arenaEventLog').textContent = '正在錄製固定步長輸入位元遮罩... 請操作移動或揮砍！';
+    }
+  }
+
+  function startReplayTape() {
+    if (recordedTape.frames.length === 0) {
+      document.getElementById('arenaEventLog').textContent = '尚無錄製磁帶，請先點擊「● 錄製輸入磁帶」操作一段動作。';
+      return;
+    }
+    enginePaused = false;
+    document.getElementById('enginePauseBtn').textContent = '⏸ 暫停内核';
+    document.getElementById('enginePauseBtn').classList.remove('active');
+    document.getElementById('recTapeBtn').classList.remove('crimson');
+    document.getElementById('recTapeBtn').textContent = '● 錄製輸入磁帶';
+    ecsWorld = createECSWorld(recordedTape.seed);
+    replayCursor = 0;
+    engineMode = 'REPLAY';
+    document.getElementById('replayTapeBtn').classList.add('active');
+    document.getElementById('arenaEventLog').textContent =
+      `開始確定性重播（共 ${recordedTape.frames.length} 幀）...`;
+  }
+
+  function toggleEnginePause() {
+    enginePaused = !enginePaused;
+    const btn = document.getElementById('enginePauseBtn');
+    btn.textContent = enginePaused ? '▶ 恢復執行' : '⏸ 暫停内核';
+    btn.classList.toggle('active', enginePaused);
+  }
+
+  function stepSingleEngineTick() {
+    if (!enginePaused) toggleEnginePause();
+    stepECSTick(ecsWorld);
+    renderArenaScene(ecsWorld);
+  }
+
+  function setEngineSpeed(spd, btnEl) {
+    engineSpeed = spd;
+    document.querySelectorAll('[data-spd]').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+  }
+
+  function cycleEngineSeed() {
+    seedIdx = (seedIdx + 1) % PRESET_SEEDS.length;
+    resetEngineWorld();
+  }
+
+  window.addEventListener('keydown', (e) => {
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') liveInputFlags.left = true;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') liveInputFlags.right = true;
+    if (e.key === 'j' || e.key === 'J' || e.key === ' ') {
+      if (e.key === ' ') e.preventDefault();
+      queueLiveSlash();
+    }
+    if (e.key === 'k' || e.key === 'K') queueLiveProjectile();
+    if (e.key === 'r' || e.key === 'R') resetEngineWorld();
+  });
+
+  window.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') liveInputFlags.left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') liveInputFlags.right = false;
+  });
+
+  // 60Hz Fixed-Timestep Accumulator Loop (帶螺旋死亡上限保護)
+  let arenaLastTs = performance.now();
+  let arenaAccMs = 0;
+
+  function arenaLoop(ts) {
+    const rawDelta = Math.max(0, Math.min(100, ts - arenaLastTs));
+    arenaLastTs = ts;
+
+    if (!enginePaused) {
+      arenaAccMs += rawDelta * engineSpeed;
+      let steps = 0;
+      while (arenaAccMs >= FIXED_DT_MS && steps < 4) {
+        stepECSTick(ecsWorld);
+        arenaAccMs -= FIXED_DT_MS;
+        steps++;
+      }
+      if (steps >= 4) arenaAccMs = 0;
+    }
+
+    renderArenaScene(ecsWorld);
+    requestAnimationFrame(arenaLoop);
+  }
+  requestAnimationFrame(arenaLoop);
+</script>
+</body>
+</html>

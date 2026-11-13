@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPRITE SHEET STUDIO // 翠風遊俠逐幀手繪精靈圖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #0d0c12;
+    --bg-panel: #181622;
+    --bg-well: #110f18;
+    --ink: #050408;
+    --brass-lo: #6e4e1c;
+    --brass-mid: #b88a32;
+    --brass-hi: #f2cf66;
+    --emerald-hi: #4ade80;
+    --emerald-mid: #16a34a;
+    --text-main: #f5f2eb;
+    --text-muted: #968fb3;
+    --px: 3px;
+    --font-en: 'Press Start 2P', monospace;
+    --font-zh: 'DotGothic16', monospace;
+  }
+
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    image-rendering: pixelated;
+    -webkit-font-smoothing: none;
+  }
+
+  body {
+    margin: 0;
+    padding: 20px 16px 48px;
+    background-color: var(--bg-void);
+    background-image: radial-gradient(rgba(242, 207, 102, 0.07) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--text-main);
+    font-family: var(--font-zh), var(--font-en);
+    display: flex;
+    justify-content: center;
+  }
+
+  .studio-shell {
+    width: 100%;
+    max-width: 1180px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  /* 像素金絲外框 */
+  .px-panel {
+    position: relative;
+    background: linear-gradient(180deg, #1f1c2e 0%, #151320 100%);
+    padding: 22px 20px 20px;
+    box-shadow:
+      inset 0 0 0 var(--px) var(--brass-lo),
+      inset 0 calc(var(--px) * 2) 0 0 var(--brass-mid),
+      0 calc(var(--px) * -1) 0 0 var(--ink),
+      0 calc(var(--px) * 1) 0 0 var(--ink),
+      calc(var(--px) * -1) 0 0 0 var(--ink),
+      calc(var(--px) * 1) 0 0 0 var(--ink),
+      0 8px 0 0 rgba(0,0,0,0.6);
+  }
+
+  .panel-badge {
+    position: absolute;
+    top: -13px;
+    left: 18px;
+    background: #2b2540;
+    color: var(--brass-hi);
+    font-family: var(--font-en), var(--font-zh);
+    font-size: 10px;
+    padding: 4px 12px;
+    box-shadow:
+      inset 0 2px 0 0 var(--brass-hi),
+      0 0 0 3px var(--ink);
+  }
+
+  /* 透明灰白棋盤格背景 (標準 Sprite Sheet 檢視底紋) */
+  .checkerboard {
+    background-color: #262626;
+    background-image:
+      linear-gradient(45deg, #363636 25%, transparent 25%),
+      linear-gradient(-45deg, #363636 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #363636 75%),
+      linear-gradient(-45deg, transparent 75%, #363636 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+
+  /* 頂部標題與匯出列 */
+  .header-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+  }
+
+  .px-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    font-family: var(--font-zh), var(--font-en);
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--text-main);
+    background: #2f2947;
+    border: none;
+    cursor: pointer;
+    box-shadow:
+      inset 0 3px 0 0 #524878,
+      inset 0 -3px 0 0 #1b172b,
+      0 0 0 3px var(--ink);
+    transition: transform 0.04s steps(1);
+  }
+  .px-btn:hover { filter: brightness(1.12); }
+  .px-btn:active, .px-btn.active {
+    transform: translateY(2px);
+    background: var(--emerald-mid);
+    color: #041f0e;
+    box-shadow:
+      inset 0 3px 0 0 var(--emerald-hi),
+      0 0 0 3px var(--ink);
+  }
+  .px-btn.gold {
+    background: #d97706;
+    color: #fff;
+    box-shadow:
+      inset 0 3px 0 0 #fde047,
+      inset 0 -3px 0 0 #78350f,
+      0 0 0 3px var(--ink);
+  }
+  .px-btn.cyan {
+    background: #0284c7;
+    color: #fff;
+    box-shadow:
+      inset 0 3px 0 0 #38bdf8,
+      inset 0 -3px 0 0 #0369a1,
+      0 0 0 3px var(--ink);
+  }
+
+  /* 上方工作區：左邊即時動畫預覽，右邊動作控制與色盤 */
+  .top-workspace {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 820px) {
+    .top-workspace { grid-template-columns: 1fr; }
+  }
+
+  .preview-stage {
+    position: relative;
+    height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 0 3px var(--ink), 0 0 0 2px var(--brass-lo);
+    overflow: hidden;
+  }
+
+  #liveCanvas {
+    width: 216px;
+    height: 216px;
+    image-rendering: pixelated;
+  }
+
+  .stage-hud {
+    position: absolute;
+    bottom: 8px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-en);
+    font-size: 9px;
+    color: var(--brass-hi);
+    text-shadow: 2px 2px 0 #000;
+    pointer-events: none;
+  }
+
+  .controls-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .anim-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .palette-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+    background: var(--bg-well);
+    box-shadow: inset 0 0 0 2px var(--ink);
+  }
+
+  .swatch {
+    width: 22px;
+    height: 22px;
+    box-shadow: 0 0 0 2px var(--ink);
+    position: relative;
+  }
+  .swatch:hover::after {
+    content: attr(data-hex);
+    position: absolute;
+    bottom: 26px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #000;
+    color: #fff;
+    font-family: var(--font-en);
+    font-size: 8px;
+    padding: 3px 5px;
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  /* 下方完整 Sprite Sheet 棋盤格展示區 */
+  .sheet-viewport {
+    padding: 20px;
+    overflow-x: auto;
+    box-shadow: inset 0 0 0 4px var(--ink), 0 0 0 2px var(--brass-lo);
+  }
+
+  .sheet-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .sheet-row:last-child { margin-bottom: 0; }
+
+  .row-label {
+    width: 165px;
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--brass-hi);
+    text-shadow: 2px 2px 0 #000;
+    background: rgba(13, 12, 18, 0.88);
+    padding: 10px 12px;
+    box-shadow: 0 0 0 2px var(--ink), inset 3px 0 0 0 var(--emerald-hi);
+  }
+  .row-label small {
+    display: block;
+    font-family: var(--font-en);
+    font-size: 8px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  .frames-track {
+    display: flex;
+    gap: 10px;
+  }
+
+  .frame-cell {
+    position: relative;
+    width: 124px;
+    height: 124px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px dashed rgba(255, 255, 255, 0.14);
+    transition: transform 0.05s steps(1), border-color 0.1s;
+  }
+
+  .frame-cell:hover {
+    border-color: var(--brass-hi);
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+
+  .frame-cell.current-frame {
+    border: 2px solid var(--emerald-hi);
+    background-color: rgba(74, 222, 128, 0.12);
+    box-shadow: 0 0 0 2px var(--ink);
+  }
+
+  .frame-cell canvas {
+    width: 108px;
+    height: 108px;
+    image-rendering: pixelated;
+  }
+
+  .frame-idx {
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    font-family: var(--font-en);
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.55);
+    text-shadow: 1px 1px 0 #000;
+  }
+</style>
+</head>
+<body>
+
+<div class="studio-shell">
+  <!-- 頂部導航與 PNG 精靈圖匯出 / 自訂精靈圖載入 -->
+  <header class="px-panel header-bar">
+    <div>
+      <div style="font-family:var(--font-en); font-size:13px; color:var(--brass-hi); text-shadow:2px 2px 0 #000;">
+        EMERALD RANGER // HD PIXEL SHADER & SPRITE SHEET STUDIO (72×72 PX)
+      </div>
+      <div style="font-size:13px; color:var(--text-muted); margin-top:4px;">
+        採用《Dead Cells》式「高精度骨架貝茲曲線 ＋ 32色盤鎖定像素著色器 ＋ 自動 1px 黑邊演算法」渲染，共 4 列 25 幀！
+      </div>
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <label class="px-btn cyan" style="cursor:pointer;">
+        📂 載入你的參考圖 (自動去背切片)
+        <input type="file" id="uploadSheetInput" accept="image/*" style="display:none;" onchange="handleCustomSheetUpload(event)">
+      </label>
+      <button class="px-btn" id="gridBtn" onclick="toggleGrid()">⌗ 像素網格: OFF</button>
+      <button class="px-btn" id="onionBtn" onclick="toggleOnion()">◐ 洋蔥皮殘影: OFF</button>
+      <button class="px-btn gold" onclick="exportSpriteSheet()">⬇ 匯出透明 PNG 精靈圖</button>
+    </div>
+  </header>
+
+  <!-- 上半部：即時動畫預覽舞台 + 動作控制器 -->
+  <div class="top-workspace">
+    <!-- 左側：放大 3 倍的即時動態預覽舞台 -->
+    <section class="px-panel" style="padding:16px;">
+      <div class="panel-badge">LIVE STAGE // 72×72 PIXEL SHADER</div>
+      <div class="preview-stage checkerboard">
+        <canvas id="liveCanvas" width="72" height="72"></canvas>
+        <div class="stage-hud">
+          <span id="hudAnimName">IDLE</span>
+          <span id="hudFrameInfo">FRAME 1 / 5</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右側：動作切換、幀率與逐格檢視控制 -->
+    <section class="px-panel controls-col">
+      <div class="panel-badge">ANIMATION CONTROLLER // 動作序列與著色器控制</div>
+
+      <div>
+        <div style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">選擇要播放的動作列（完全對齊參考圖 4 列配置：5幀 / 8幀 / 6幀 / 6幀）：</div>
+        <div class="anim-tabs">
+          <button class="px-btn active" data-anim="idle" onclick="setAnim('idle', this)">1. 待機與亮劍 (IDLE 5幀)</button>
+          <button class="px-btn" data-anim="run" onclick="setAnim('run', this)">2. 疾風奔跑 (RUN 8幀)</button>
+          <button class="px-btn" data-anim="slash" onclick="setAnim('slash', this)">3. 連段揮劍斬擊 (SLASH 6幀)</button>
+          <button class="px-btn" data-anim="hurt" onclick="setAnim('hurt', this)">4. 受擊與倒地 (HURT/KO 6幀)</button>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; background:var(--bg-well); padding:12px; box-shadow:inset 0 0 0 2px var(--ink);">
+        <button class="px-btn" id="playPauseBtn" onclick="togglePlay()">⏸ 暫停播放</button>
+        <button class="px-btn" onclick="stepFrame(-1)">◀ 上一幀</button>
+        <button class="px-btn" onclick="stepFrame(1)">下一幀 ▶</button>
+        <button class="px-btn" id="outlineBtn" onclick="toggleOutlineMode()">✒ 輪廓線: 深紫黑</button>
+
+        <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+          <span style="font-size:13px; color:var(--text-muted);">速度:</span>
+          <input type="range" min="2" max="16" value="9" oninput="updateFPS(this.value)" style="accent-color:var(--emerald-hi); cursor:pointer; width:90px;">
+          <span id="fpsLabel" style="font-family:var(--font-en); font-size:10px; color:var(--brass-hi); width:46px;">9 FPS</span>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">像素著色器鎖定色盤 (30-Color Master Palette — 自動量化無模糊漸層)：</div>
+        <div class="palette-strip" id="paletteStrip"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 下半部：完整透明棋盤格 Sprite Sheet 總覽 -->
+  <section class="px-panel">
+    <div class="panel-badge">FULL SPRITE SHEET ATLAS // 點擊任一格鎖定檢視單幀細節</div>
+    <div class="sheet-viewport checkerboard" id="sheetContainer">
+      <!-- 由 JS 動態渲染 4 列共 25 幀 72x72 像素精靈圖 -->
+    </div>
+  </section>
+</div>
+
+<!-- 隱藏的匯出用大畫布 (8欄 x 4列, 每格 72x72) -->
+<canvas id="exportCanvas" width="576" height="288" style="display:none;"></canvas>
+
+<script>
+  // ============================================================================
+  // 1. 30色大師級像素色盤 (精準對齊參考圖的蓬鬆棕髮、翠綠斗篷、皮革胸甲、鎖甲與劍光)
+  // ============================================================================
+  const MASTER_PALETTE_HEX = [
+    '#120d17', // 0: 純黑紫輪廓線 (Outline)
+    // 蓬鬆棕髮 (5階)
+    '#2e180d', '#4a2816', '#6e3d22', '#945530', '#b86f42',
+    // 臉部與肌膚 (4階)
+    '#9e5e40', '#cf8460', '#f0a884', '#ffd1b3',
+    // 眼睛與高光
+    '#ffffff', '#211c2e',
+    // 翠綠遊俠斗篷 (5階立體皺褶)
+    '#093016', '#125226', '#1e7d39', '#32ab4f', '#66d978',
+    // 皮革胸甲、護腕與長靴 (5階)
+    '#29170e', '#472a1a', '#694028', '#8c583a', '#b07450',
+    // 鎖子甲袖口與深灰長褲 (4階)
+    '#1f222e', '#32384a', '#4b536b', '#6c7694',
+    // 黃銅胸針、皮帶扣與劍格 (3階)
+    '#805510', '#cca029', '#ffe36e',
+    // 鋼鐵長劍與劍氣火花 (3階)
+    '#8fa3bf', '#c4d7ed', '#fff6a3'
+  ];
+
+  // 轉換為 RGB 陣列供 Pixel Shader 快速進行歐氏色彩距離吸附
+  const PAL_RGB = MASTER_PALETTE_HEX.map(hex => {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255, hex];
+  });
+
+  const paletteStrip = document.getElementById('paletteStrip');
+  MASTER_PALETTE_HEX.forEach(hex => {
+    const sw = document.createElement('div');
+    sw.className = 'swatch';
+    sw.style.background = hex;
+    sw.setAttribute('data-hex', hex);
+    paletteStrip.appendChild(sw);
+  });
+
+  // 尋找最接近的像素色盤顏色
+  function nearestPaletteRGB(r, g, b) {
+    let bestDist = 1e9;
+    let best = PAL_RGB[0];
+    for (let i = 1; i < PAL_RGB.length; i++) {
+      const p = PAL_RGB[i];
+      // 加權人眼色彩感知距離
+      const dr = (r - p[0]) * 0.30;
+      const dg = (g - p[1]) * 0.59;
+      const db = (b - p[2]) * 0.11;
+      const d = dr * dr + dg * dg + db * db;
+      if (d < bestDist) {
+        bestDist = d;
+        best = p;
+      }
+    }
+    return best;
+  }
+
+  // ============================================================================
+  // 2.《Dead Cells》風格：高解析度骨架曲線渲染 + 像素量化與自動 1px 輪廓著色器
+  // ============================================================================
+  const CELL_SIZE = 72; // 單幀原生像素解析度 72x72 (完全匹敵參考圖細節密度)
+  let darkOutline = true;
+
+  /**
+   * 繪製圓潤膠囊肢體 (自動帶立體明暗漸層，讓後續色盤量化能自然產生高光與陰影階梯)
+   */
+  function drawLimb(ctx, x1, y1, x2, y2, r1, r2, colDark, colMid, colLight) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x1 + nx * r1, y1 + ny * r1);
+    ctx.lineTo(x2 + nx * r2, y2 + ny * r2);
+    ctx.arc(x2, y2, r2, Math.atan2(ny, nx), Math.atan2(-ny, -nx));
+    ctx.lineTo(x1 - nx * r1, y1 - ny * r1);
+    ctx.arc(x1, y1, r1, Math.atan2(-ny, -nx), Math.atan2(ny, nx));
+    ctx.closePath();
+
+    const grad = ctx.createLinearGradient(x1 - nx * r1, y1 - ny * r1, x1 + nx * r1, y1 + ny * r1);
+    grad.addColorStop(0, colLight);
+    grad.addColorStop(0.55, colMid);
+    grad.addColorStop(1, colDark);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // 內部結構分界暗線
+    ctx.strokeStyle = '#120d17';
+    ctx.lineWidth = 0.85;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /**
+   * 核心角色骨架與造型繪製函數 (支援站立、奔跑、揮劍、受擊與橫躺倒地完整姿態)
+   */
+  function drawVectorRanger(ctx, pose) {
+    ctx.save();
+
+    // 處理倒地旋轉與中心偏移
+    const cx = 36 + (pose.tx || 0);
+    const cy = 40 + (pose.ty || 0);
+    ctx.translate(cx, cy);
+    if (pose.rot) ctx.rotate((pose.rot * Math.PI) / 180);
+
+    const lean = pose.lean || 0;
+    const hipX = 0, hipY = 6;
+    const chestX = lean * 0.7, chestY = -6;
+    const headX = lean * 1.1 + (pose.headX || 0), headY = -17 + (pose.headY || 0);
+
+    // --------------------------------------------------------
+    // LAYER 1: 翠綠斗篷後擺 (具備多段波浪皺褶與暗部內襯)
+    // --------------------------------------------------------
+    ctx.save();
+    const cw = pose.cloakWave || 0;
+    const cLift = pose.cloakLift || 0;
+    ctx.beginPath();
+    ctx.moveTo(chestX - 6, chestY - 4);
+    ctx.bezierCurveTo(
+      chestX - 16 - cLift * 0.7, chestY + 2 - cLift * 0.4,
+      hipX - 20 - cLift, hipY + 10 - cLift * 0.6 + cw,
+      hipX - 12 - cLift * 0.9, hipY + 19 - cLift * 0.5 + cw
+    );
+    ctx.lineTo(hipX + 4 - cLift * 0.3, hipY + 17 - cLift * 0.3);
+    ctx.bezierCurveTo(
+      hipX + 2, hipY + 6,
+      chestX + 5, chestY + 2,
+      chestX + 4, chestY - 4
+    );
+    ctx.closePath();
+    const cloakGrad = ctx.createLinearGradient(chestX - 22, chestY - 4, hipX + 6, hipY + 20);
+    cloakGrad.addColorStop(0, '#32ab4f');
+    cloakGrad.addColorStop(0.5, '#1e7d39');
+    cloakGrad.addColorStop(1, '#093016');
+    ctx.fillStyle = cloakGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#120d17';
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    // 斗篷折線高光與深谷線
+    ctx.beginPath();
+    ctx.moveTo(chestX - 5, chestY);
+    ctx.quadraticCurveTo(hipX - 12 - cLift * 0.6, hipY + 8 - cLift * 0.3, hipX - 8 - cLift * 0.7, hipY + 17 - cLift * 0.4 + cw);
+    ctx.strokeStyle = '#66d978';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.restore();
+
+    // --------------------------------------------------------
+    // LAYER 2: 後側手臂與腰間劍鞘 (若未持劍在胸前)
+    // --------------------------------------------------------
+    if (pose.backArm) {
+      const ba = pose.backArm;
+      // 鎖子甲上臂
+      drawLimb(ctx, chestX + 3, chestY - 1, chestX + ba.ex, chestY + ba.ey, 3.2, 2.8, '#1f222e', '#32384a', '#4b536b');
+      // 皮革護腕前臂
+      drawLimb(ctx, chestX + ba.ex, chestY + ba.ey, chestX + ba.hx, chestY + ba.hy, 2.8, 2.3, '#29170e', '#472a1a', '#694028');
+      // 拳頭
+      ctx.fillStyle = '#cf8460';
+      ctx.beginPath();
+      ctx.arc(chestX + ba.hx, chestY + ba.hy, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // --------------------------------------------------------
+    // LAYER 3: 雙腿與翻折皮靴 (大腿鐵灰長褲 + 小腿三段式皮靴)
+    // --------------------------------------------------------
+    const legs = [pose.legR, pose.legL]; // 先畫右後腿，再畫左前腿
+    legs.forEach((leg, idx) => {
+      if (!leg) return;
+      const isFront = idx === 1;
+      const ox = hipX + (isFront ? -2 : 2.5);
+      const oy = hipY + 1;
+      const kx = ox + leg.kx, ky = oy + leg.ky;
+      const fx = ox + leg.fx, fy = oy + leg.fy;
+
+      // 大腿長褲
+      drawLimb(ctx, ox, oy, kx, ky, 3.8, 3.1, '#1f222e', isFront ? '#4b536b' : '#32384a', '#6c7694');
+      // 小腿長靴
+      drawLimb(ctx, kx, ky, fx, fy, 3.2, 2.6, '#29170e', isFront ? '#694028' : '#472a1a', '#8c583a');
+      // 靴口翻邊護膝
+      ctx.fillStyle = isFront ? '#8c583a' : '#694028';
+      ctx.fillRect(kx - 3.2, ky - 1.5, 6.4, 2.5);
+
+      // 靴子腳掌
+      ctx.beginPath();
+      ctx.ellipse(fx + 1.8, fy + 1.2, 4.2, 2.1, (leg.footAng || 0) * Math.PI / 180, 0, Math.PI * 2);
+      ctx.fillStyle = isFront ? '#472a1a' : '#29170e';
+      ctx.fill();
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 0.9;
+      ctx.stroke();
+    });
+
+    // --------------------------------------------------------
+    // LAYER 4: 皮革護甲軀幹、斜跨胸帶、腰帶銅釦與下擺分片
+    // --------------------------------------------------------
+    ctx.save();
+    // 皮甲下擺分片 (Tassets)
+    ctx.fillStyle = '#472a1a';
+    ctx.beginPath();
+    ctx.roundRect(hipX - 6.5, hipY - 1, 13, 5.5, 1.5);
+    ctx.fill();
+    ctx.strokeStyle = '#120d17';
+    ctx.lineWidth = 0.9;
+    ctx.stroke();
+
+    // 主胸甲
+    ctx.beginPath();
+    ctx.moveTo(chestX - 6.5, chestY - 3);
+    ctx.lineTo(chestX + 6.5, chestY - 3);
+    ctx.lineTo(hipX + 5.5, hipY + 1);
+    ctx.lineTo(hipX - 5.5, hipY + 1);
+    ctx.closePath();
+    const armorGrad = ctx.createLinearGradient(chestX - 6, chestY, chestX + 6, hipY);
+    armorGrad.addColorStop(0, '#b07450');
+    armorGrad.addColorStop(0.45, '#694028');
+    armorGrad.addColorStop(1, '#29170e');
+    ctx.fillStyle = armorGrad;
+    ctx.fill();
+    ctx.stroke();
+
+    // 胸甲中線與斜胸帶
+    ctx.beginPath();
+    ctx.moveTo(chestX, chestY - 1);
+    ctx.lineTo(hipX, hipY);
+    ctx.strokeStyle = '#29170e';
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    // 腰帶與銀白/黃銅方釦
+    ctx.fillStyle = '#29170e';
+    ctx.fillRect(hipX - 6, hipY - 1.5, 12, 2.8);
+    ctx.fillStyle = '#ffe36e';
+    ctx.fillRect(hipX - 1.5, hipY - 1.8, 3.2, 3.2);
+    ctx.restore();
+
+    // --------------------------------------------------------
+    // LAYER 5: 翠綠斗篷披肩領口與黃金胸針 + 左側垂墜布料
+    // --------------------------------------------------------
+    ctx.save();
+    // 斗篷前擺左側垂墜 (待機時包覆左肩，奔跑時向後掀開)
+    if (!pose.cloakOpen) {
+      ctx.beginPath();
+      ctx.moveTo(chestX - 6.5, chestY - 4);
+      ctx.quadraticCurveTo(chestX - 10, hipY + 4, hipX - 7, hipY + 15);
+      ctx.lineTo(hipX - 3, hipY + 13);
+      ctx.quadraticCurveTo(chestX - 3, hipY + 2, chestX - 1, chestY - 2);
+      ctx.closePath();
+      ctx.fillStyle = '#32ab4f';
+      ctx.fill();
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 0.9;
+      ctx.stroke();
+    }
+
+    // 翠綠厚實領巾披肩
+    ctx.beginPath();
+    ctx.ellipse(chestX, chestY - 3.5, 7.8, 3.6, 0, 0, Math.PI * 2);
+    const hoodGrad = ctx.createLinearGradient(chestX - 7, chestY - 7, chestX + 7, chestY);
+    hoodGrad.addColorStop(0, '#66d978');
+    hoodGrad.addColorStop(0.5, '#1e7d39');
+    hoodGrad.addColorStop(1, '#093016');
+    ctx.fillStyle = hoodGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#120d17';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 黃金斗篷扣針
+    ctx.fillStyle = '#ffe36e';
+    ctx.beginPath();
+    ctx.arc(chestX + 2.2, chestY - 2.8, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // --------------------------------------------------------
+    // LAYER 6: 動漫比例頭部、立體五官與蓬鬆分層棕髮 (完全對標參考圖)
+    // --------------------------------------------------------
+    ctx.save();
+    ctx.translate(headX, headY);
+    if (pose.headRot) ctx.rotate((pose.headRot * Math.PI) / 180);
+
+    // 後腦杓髮團
+    ctx.fillStyle = '#4a2816';
+    ctx.beginPath();
+    ctx.arc(-1, -1.5, 8.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 臉龐輪廓 (帶下巴弧度)
+    ctx.beginPath();
+    ctx.moveTo(-5.5, -4);
+    ctx.quadraticCurveTo(-5.8, 4.5, 0.5, 6.2);
+    ctx.quadraticCurveTo(6.2, 4.8, 6.2, -3.5);
+    ctx.closePath();
+    const faceGrad = ctx.createLinearGradient(-4, -3, 6, 5);
+    faceGrad.addColorStop(0, '#ffd1b3');
+    faceGrad.addColorStop(0.6, '#f0a884');
+    faceGrad.addColorStop(1, '#cf8460');
+    ctx.fillStyle = faceGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#120d17';
+    ctx.lineWidth = 0.9;
+    ctx.stroke();
+
+    // 左側耳朵
+    ctx.fillStyle = '#f0a884';
+    ctx.beginPath();
+    ctx.arc(-5.6, 0.8, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 表情與雙眼 (朝右前方凝視)
+    if (pose.face === 'ko') {
+      // 昏迷閉眼橫線
+      ctx.fillStyle = '#2e180d';
+      ctx.fillRect(-1.5, 0.5, 2.5, 1.1);
+      ctx.fillRect(2.8, 0.5, 2.5, 1.1);
+    } else if (pose.face === 'hurt') {
+      // 受擊緊閉雙眼與張口痛呼
+      ctx.strokeStyle = '#2e180d';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-2, 0); ctx.lineTo(0.2, 1.2); ctx.lineTo(-2, 2);
+      ctx.moveTo(4.8, 0); ctx.lineTo(2.6, 1.2); ctx.lineTo(4.8, 2);
+      ctx.stroke();
+      // 張嘴痛呼
+      ctx.fillStyle = '#4a2816';
+      ctx.beginPath();
+      ctx.ellipse(1.8, 3.8, 2.0, 1.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // 銳利雙眼 (眼白 + 深邃瞳孔 + 眉毛)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-1.8, -0.4, 2.4, 2.1);
+      ctx.fillRect(2.6, -0.4, 2.4, 2.1);
+      ctx.fillStyle = '#120d17';
+      ctx.fillRect(-0.8, -0.2, 1.4, 1.9);
+      ctx.fillRect(3.5, -0.2, 1.4, 1.9);
+      // 濃眉 (戰鬥時微皺)
+      const browTilt = pose.face === 'fierce' ? 0.6 : 0;
+      ctx.fillStyle = '#4a2816';
+      ctx.beginPath();
+      ctx.moveTo(-2.5, -1.8 - browTilt);
+      ctx.lineTo(0.8, -1.2 + browTilt);
+      ctx.lineTo(0.8, -0.4 + browTilt);
+      ctx.lineTo(-2.5, -1.0 - browTilt);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(2.2, -1.2 + browTilt);
+      ctx.lineTo(5.4, -1.8 - browTilt);
+      ctx.lineTo(5.4, -1.0 - browTilt);
+      ctx.lineTo(2.2, -0.4 + browTilt);
+      ctx.fill();
+      // 堅毅嘴角線
+      ctx.fillStyle = '#9e5e40';
+      ctx.fillRect(0.8, 3.8, 2.4, 1.0);
+    }
+
+    // 蓬鬆多層次棕髮與額頭瀏海分束 (完全還原參考圖髮型)
+    ctx.beginPath();
+    ctx.moveTo(-8.2, 1.5);
+    ctx.quadraticCurveTo(-9.2, -6.5, -2.5, -9.2);
+    ctx.quadraticCurveTo(4.5, -10.0, 7.8, -4.5);
+    ctx.lineTo(6.5, -1.2);
+    // 前額三束鋸齒瀏海
+    ctx.lineTo(4.2, -3.2);
+    ctx.lineTo(2.5, -0.8);
+    ctx.lineTo(0.2, -3.5);
+    ctx.lineTo(-2.2, -0.8);
+    ctx.lineTo(-4.2, -3.2);
+    ctx.lineTo(-5.8, 2.2);
+    ctx.closePath();
+
+    const hairGrad = ctx.createLinearGradient(-6, -9, 5, 2);
+    hairGrad.addColorStop(0, '#b86f42');
+    hairGrad.addColorStop(0.35, '#945530');
+    hairGrad.addColorStop(0.75, '#6e3d22');
+    hairGrad.addColorStop(1, '#4a2816');
+    ctx.fillStyle = hairGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#120d17';
+    ctx.lineWidth = 1.0;
+    ctx.stroke();
+
+    // 髮頂受光月牙高光
+    ctx.strokeStyle = '#b86f42';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(-1, -4.5, 4.8, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.stroke();
+    ctx.restore();
+
+    // --------------------------------------------------------
+    // LAYER 7: 前側手臂、騎士長劍與揮砍金色十字殘影
+    // --------------------------------------------------------
+    if (pose.frontArm) {
+      const fa = pose.frontArm;
+      const sx = chestX - 3.5, sy = chestY - 0.5;
+      const ex = sx + fa.ex, ey = sy + fa.ey;
+      const hx = sx + fa.hx, hy = sy + fa.hy;
+
+      // 鎖子甲上臂 + 皮護腕前臂
+      drawLimb(ctx, sx, sy, ex, ey, 3.3, 2.8, '#1f222e', '#4b536b', '#6c7694');
+      drawLimb(ctx, ex, ey, hx, hy, 2.9, 2.4, '#29170e', '#694028', '#8c583a');
+
+      // 若持有長劍
+      if (fa.swordAngle !== undefined) {
+        drawKnightSword(ctx, hx, hy, fa.swordAngle, fa.slashFX);
+      }
+
+      // 握劍手部
+      ctx.fillStyle = '#f0a884';
+      ctx.beginPath();
+      ctx.arc(hx, hy, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#120d17';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+
+    // 若倒地掉落長劍在身邊 (Row 4 最後一幀)
+    if (pose.droppedSword) {
+      drawKnightSword(ctx, 14, 7, 0, false);
+    }
+
+    ctx.restore();
+  }
+
+  /**
+   * 繪製騎士闊劍與參考圖同款「金色星芒揮砍弧光特效」
+   */
+  function drawKnightSword(ctx, hx, hy, angleDeg, withSlashFX) {
+    ctx.save();
+    ctx.translate(hx, hy);
+    ctx.rotate((angleDeg * Math.PI) / 180);
+
+    // 劍柄與黃銅配重球 (Pommel)
+    ctx.fillStyle = '#472a1a';
+    ctx.fillRect(-5, -1.3, 4.5, 2.6);
+    ctx.fillStyle = '#ffe36e';
+    ctx.beginPath();
+    ctx.arc(-5.8, 0, 2.0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 雙翼精鋼劍刃
+    ctx.beginPath();
+    ctx.moveTo(1, -2.3);
+    ctx.lineTo(18, -1.6);
+    ctx.lineTo(22.5, 0);
+    ctx.lineTo(18, 1.6);
+    ctx.lineTo(1, 2.3);
+    ctx.closePath();
+    const bladeGrad = ctx.createLinearGradient(0, -2.3, 0, 2.3);
+    bladeGrad.addColorStop(0, '#ffffff');
+    bladeGrad.addColorStop(0.45, '#c4d7ed');
+    bladeGrad.addColorStop(1, '#6c7694');
+    ctx.fillStyle = bladeGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#120d17';
+    ctx.lineWidth = 0.9;
+    ctx.stroke();
+
+    // 黃銅十字護手 (Crossguard)
+    ctx.fillStyle = '#ffe36e';
+    ctx.strokeStyle = '#120d17';
+    ctx.beginPath();
+    ctx.roundRect(-0.8, -5.2, 2.6, 10.4, 1);
+    ctx.fill();
+    ctx.stroke();
+
+    // 若觸發斬擊弧光 (對應參考圖 Row 3 第 5 幀的星芒劍氣！)
+    if (withSlashFX) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(6, 0, 17, -Math.PI * 0.48, Math.PI * 0.48);
+      ctx.strokeStyle = '#fff6a3';
+      ctx.lineWidth = 3.2;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(7.5, 0, 17, -Math.PI * 0.35, Math.PI * 0.35);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      // 劍尖十字星芒閃光
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(16, -9, 1.8, 10);
+      ctx.fillRect(12, -5, 10, 1.8);
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  /**
+   * PIXEL SHADER PASS：將高解析向量畫布轉為純粹像素點陣 + 30色盤強制吸附 + 1px 純黑外輪廓
+   */
+  function renderPixelShaderFrame(targetCtx, pose) {
+    const off = document.createElement('canvas');
+    off.width = CELL_SIZE;
+    off.height = CELL_SIZE;
+    const oCtx = off.getContext('2d');
+
+    // 1. 繪製高細節骨架向量角色
+    drawVectorRanger(oCtx, pose);
+
+    // 2. 讀取像素進行 Alpha 二值化去毛邊 + 30色盤量化吸附
+    const imgData = oCtx.getImageData(0, 0, CELL_SIZE, CELL_SIZE);
+    const src = imgData.data;
+    const outData = targetCtx.createImageData(CELL_SIZE, CELL_SIZE);
+    const dst = outData.data;
+
+    // 紀錄實心遮罩供 1px 外框演算法使用
+    const mask = new Uint8Array(CELL_SIZE * CELL_SIZE);
+
+    for (let i = 0; i < CELL_SIZE * CELL_SIZE; i++) {
+      const idx = i * 4;
+      const a = src[idx + 3];
+      if (a >= 115) {
+        mask[i] = 1;
+        const [r, g, b] = nearestPaletteRGB(src[idx], src[idx + 1], src[idx + 2]);
+        dst[idx] = r;
+        dst[idx + 1] = g;
+        dst[idx + 2] = b;
+        dst[idx + 3] = 255;
+      }
+    }
+
+    // 3. 自動補齊 1px 外部純黑輪廓線 (4鄰域形態學膨脹 Outline Shader)
+    const outCol = darkOutline ? [18, 13, 23] : [45, 34, 58];
+    for (let y = 1; y < CELL_SIZE - 1; y++) {
+      for (let x = 1; x < CELL_SIZE - 1; x++) {
+        const p = y * CELL_SIZE + x;
+        if (mask[p] === 0) {
+          if (
+            mask[p - 1] === 1 ||
+            mask[p + 1] === 1 ||
+            mask[p - CELL_SIZE] === 1 ||
+            mask[p + CELL_SIZE] === 1
+          ) {
+            const idx = p * 4;
+            dst[idx] = outCol[0];
+            dst[idx + 1] = outCol[1];
+            dst[idx + 2] = outCol[2];
+            dst[idx + 3] = 255;
+          }
+        }
+      }
+    }
+
+    // 4. 加入像素級地面橢圓陰影
+    targetCtx.clearRect(0, 0, CELL_SIZE, CELL_SIZE);
+    targetCtx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    const shWidth = pose.rot && Math.abs(pose.rot) > 45 ? 42 : 24;
+    targetCtx.fillRect(Math.floor((CELL_SIZE - shWidth) / 2), 63, shWidth, 3);
+
+    // 疊加角色像素圖層
+    const finalOff = document.createElement('canvas');
+    finalOff.width = CELL_SIZE;
+    finalOff.height = CELL_SIZE;
+    finalOff.getContext('2d').putImageData(outData, 0, 0);
+    targetCtx.drawImage(finalOff, 0, 0);
+  }
+
+  // ============================================================================
+  // 3. 定義與參考圖完全一致的 4 列 25 幀動作關鍵幀參數表
+  //    Row 1: 5幀 | Row 2: 8幀 | Row 3: 6幀 | Row 4: 6幀
+  // ============================================================================
+  const SPRITE_SHEET = {
+    idle: {
+      title: 'ROW 1 // IDLE & DRAW',
+      sub: '待機呼吸、摸劍柄與亮劍戒備 (5 Frames)',
+      frames: [
+        { ty: 0, cloakWave: 0, legL: { kx: -2, ky: 8, fx: -2.5, fy: 15 }, legR: { kx: 2.5, ky: 8, fx: 3, fy: 15 }, frontArm: { ex: -2, ey: 5, hx: 0, hy: 10 }, backArm: { ex: 3, ey: 5, hx: 5, hy: 9, swordAngle: -35 } },
+        { ty: 0.8, cloakWave: 0.5, legL: { kx: -2, ky: 7.5, fx: -2.5, fy: 14.2 }, legR: { kx: 2.5, ky: 7.5, fx: 3, fy: 14.2 }, frontArm: { ex: -2, ey: 5.5, hx: 0, hy: 10.5 }, backArm: { ex: 3, ey: 5, hx: 5, hy: 9 } },
+        { ty: 1.2, cloakWave: 1, legL: { kx: -2, ky: 7, fx: -2.5, fy: 13.8 }, legR: { kx: 2.5, ky: 7, fx: 3, fy: 13.8 }, frontArm: { ex: -1.5, ey: 5, hx: 1, hy: 9.5 }, backArm: { ex: 3, ey: 5, hx: 5, hy: 9 } },
+        { ty: 0.4, cloakWave: 0.5, cloakOpen: true, legL: { kx: -2, ky: 8, fx: -2.5, fy: 14.6 }, legR: { kx: 2.5, ky: 8, fx: 3, fy: 14.6 }, frontArm: { ex: 1, ey: 4, hx: 5, hy: 6 }, backArm: { ex: 3, ey: 5, hx: 5, hy: 9 }, face: 'fierce' },
+        { ty: 0, cloakWave: 0, cloakOpen: true, legL: { kx: -2, ky: 8, fx: -2.5, fy: 15 }, legR: { kx: 2.5, ky: 8, fx: 3, fy: 15 }, frontArm: { ex: 0, ey: 5, hx: 4, hy: 5, swordAngle: -42 }, backArm: { ex: 4, ey: 5, hx: 6, hy: 9 }, face: 'fierce' }
+      ]
+    },
+    run: {
+      title: 'ROW 2 // RUN CYCLE',
+      sub: '8幀流暢全身疾跑與翠綠斗篷波浪飛揚 (8 Frames)',
+      frames: [
+        { lean: 3.5, ty: -1, cloakOpen: true, cloakLift: 8, cloakWave: -2, legL: { kx: 6, ky: 5, fx: 9, fy: 13, footAng: -15 }, legR: { kx: -5, ky: 6, fx: -10, fy: 11, footAng: 35 }, frontArm: { ex: -4, ey: 4, hx: -1, hy: 8 }, backArm: { ex: 5, ey: 3, hx: 9, hy: 6 }, face: 'fierce' },
+        { lean: 4.0, ty: -2.2, cloakOpen: true, cloakLift: 11, cloakWave: -4, legL: { kx: 4, ky: 6, fx: 6, fy: 14 }, legR: { kx: -3, ky: 5, fx: -7, fy: 9, footAng: 45 }, frontArm: { ex: -2, ey: 4, hx: 2, hy: 8 }, backArm: { ex: 4, ey: 3, hx: 7, hy: 6 }, face: 'fierce' },
+        { lean: 3.5, ty: 0.5, cloakOpen: true, cloakLift: 9, cloakWave: 1, legL: { kx: 1, ky: 8, fx: 0, fy: 14.5 }, legR: { kx: 2, ky: 6, fx: -1, fy: 11 }, frontArm: { ex: 2, ey: 4, hx: 6, hy: 6 }, backArm: { ex: 1, ey: 4, hx: 3, hy: 8 }, face: 'fierce' },
+        { lean: 3.0, ty: 1.2, cloakOpen: true, cloakLift: 7, cloakWave: 3, legL: { kx: -3, ky: 7, fx: -6, fy: 13.8, footAng: 20 }, legR: { kx: 5, ky: 5, fx: 7, fy: 12, footAng: -15 }, frontArm: { ex: 4, ey: 3, hx: 8, hy: 4 }, backArm: { ex: -3, ey: 4, hx: -5, hy: 8 }, face: 'fierce' },
+        { lean: 3.5, ty: -1, cloakOpen: true, cloakLift: 10, cloakWave: -1, legL: { kx: -6, ky: 6, fx: -11, fy: 11, footAng: 40 }, legR: { kx: 7, ky: 5, fx: 10, fy: 13, footAng: -15 }, frontArm: { ex: 5, ey: 2, hx: 9, hy: 3 }, backArm: { ex: -5, ey: 4, hx: -7, hy: 7 }, face: 'fierce' },
+        { lean: 4.0, ty: -2.2, cloakOpen: true, cloakLift: 12, cloakWave: -3, legL: { kx: -4, ky: 5, fx: -8, fy: 9, footAng: 45 }, legR: { kx: 4, ky: 6, fx: 5, fy: 14 }, frontArm: { ex: 2, ey: 3, hx: 6, hy: 5 }, backArm: { ex: -2, ey: 4, hx: -3, hy: 8 }, face: 'fierce' },
+        { lean: 3.5, ty: 0.5, cloakOpen: true, cloakLift: 9, cloakWave: 2, legL: { kx: 2, ky: 6, fx: -1, fy: 11 }, legR: { kx: 1, ky: 8, fx: 0, fy: 14.5 }, frontArm: { ex: -1, ey: 4, hx: 2, hy: 7 }, backArm: { ex: 2, ey: 4, hx: 5, hy: 7 }, face: 'fierce' },
+        { lean: 3.0, ty: 1.2, cloakOpen: true, cloakLift: 7, cloakWave: 3, legL: { kx: 5, ky: 5, fx: 8, fy: 12.5, footAng: -10 }, legR: { kx: -3, ky: 7, fx: -6, fy: 13.8, footAng: 20 }, frontArm: { ex: -3, ey: 4, hx: -1, hy: 8 }, backArm: { ex: 4, ey: 3, hx: 8, hy: 6 }, face: 'fierce' }
+      ]
+    },
+    slash: {
+      title: 'ROW 3 // SWORD SLASH',
+      sub: '戒備、舉劍蓄力、前踏平斬、星芒劍氣爆發 (6 Frames)',
+      frames: [
+        { lean: 1, cloakOpen: true, cloakLift: 3, legL: { kx: -3, ky: 8, fx: -5, fy: 15 }, legR: { kx: 4, ky: 8, fx: 6, fy: 15 }, frontArm: { ex: 2, ey: 4, hx: 7, hy: 5, swordAngle: -45 }, backArm: { ex: -2, ey: 5, hx: -4, hy: 9 }, face: 'fierce' },
+        { lean: 1.5, cloakOpen: true, cloakLift: 5, legL: { kx: -4, ky: 8, fx: -6, fy: 15 }, legR: { kx: 4, ky: 8, fx: 7, fy: 15 }, frontArm: { ex: 3, ey: 3, hx: 8, hy: 4, swordAngle: -50 }, backArm: { ex: -3, ey: 5, hx: -5, hy: 9 }, face: 'fierce' },
+        { lean: -1.5, cloakOpen: true, cloakLift: 7, legL: { kx: -5, ky: 8, fx: -7, fy: 15 }, legR: { kx: 5, ky: 7, fx: 8, fy: 15 }, frontArm: { ex: 4, ey: 0, hx: 9, hy: -2, swordAngle: -85 }, backArm: { ex: -3, ey: 4, hx: -6, hy: 7 }, face: 'fierce' },
+        { lean: 4.5, tx: 2, ty: 1, cloakOpen: true, cloakLift: 11, cloakWave: -2, legL: { kx: -6, ky: 7, fx: -10, fy: 14 }, legR: { kx: 7, ky: 6, fx: 10, fy: 14 }, frontArm: { ex: 4, ey: 4, hx: 9, hy: 6, swordAngle: 12 }, backArm: { ex: -4, ey: 3, hx: -7, hy: 6 }, face: 'fierce' },
+        { lean: 5.0, tx: 3, ty: 0.5, cloakOpen: true, cloakLift: 13, cloakWave: -4, legL: { kx: -6, ky: 7, fx: -10, fy: 14.5 }, legR: { kx: 7, ky: 6, fx: 10, fy: 14.5 }, frontArm: { ex: 5, ey: 2, hx: 11, hy: 3, swordAngle: -28, slashFX: true }, backArm: { ex: -5, ey: 3, hx: -8, hy: 5 }, face: 'fierce' },
+        { lean: 2.5, tx: 1, cloakOpen: true, cloakLift: 7, cloakWave: 1, legL: { kx: -4, ky: 8, fx: -7, fy: 15 }, legR: { kx: 5, ky: 7, fx: 8, fy: 15 }, frontArm: { ex: 3, ey: 4, hx: 8, hy: 5, swordAngle: -40 }, backArm: { ex: -2, ey: 4, hx: -4, hy: 8 }, face: 'fierce' }
+      ]
+    },
+    hurt: {
+      title: 'ROW 4 // HURT & DEFEAT',
+      sub: '受擊驚呼、重心失衡後仰、跌落與倒地不起 (6 Frames)',
+      frames: [
+        { lean: -2, ty: 0, cloakOpen: true, cloakLift: 3, legL: { kx: -3, ky: 8, fx: -4, fy: 15 }, legR: { kx: 3, ky: 8, fx: 4, fy: 15 }, frontArm: { ex: -6, ey: -2, hx: -9, hy: -7 }, backArm: { ex: 5, ey: 3, hx: 8, hy: 7 }, face: 'hurt' },
+        { lean: -5, rot: -22, tx: -3, ty: 2, cloakOpen: true, cloakLift: 6, legL: { kx: -2, ky: 7, fx: -1, fy: 14 }, legR: { kx: 5, ky: 6, fx: 9, fy: 12 }, frontArm: { ex: -7, ey: -1, hx: -11, hy: -4 }, backArm: { ex: 6, ey: 2, hx: 10, hy: 5 }, face: 'hurt' },
+        { rot: 82, tx: -4, ty: 15, cloakOpen: true, cloakLift: 2, legL: { kx: -3, ky: 6, fx: -6, fy: 13 }, legR: { kx: 2, ky: 5, fx: -2, fy: 12 }, frontArm: { ex: 2, ey: 4, hx: 4, hy: 8 }, face: 'hurt' },
+        { rot: 86, tx: -4, ty: 16, cloakOpen: true, cloakLift: 1, legL: { kx: -2, ky: 6, fx: -5, fy: 13 }, legR: { kx: 2, ky: 6, fx: -1, fy: 12 }, frontArm: { ex: 1, ey: 5, hx: 3, hy: 9 }, face: 'hurt' },
+        { rot: 90, tx: -3, ty: 17, cloakOpen: true, cloakLift: 0, legL: { kx: -1, ky: 7, fx: -3, fy: 14 }, legR: { kx: 1, ky: 7, fx: 0, fy: 14 }, frontArm: { ex: 1, ey: 5, hx: 2, hy: 9 }, face: 'ko' },
+        { rot: 90, tx: -2, ty: 18, cloakOpen: false, cloakLift: 0, legL: { kx: 0, ky: 7, fx: -1, fy: 14 }, legR: { kx: 0, ky: 7, fx: 0, fy: 14 }, frontArm: { ex: 2, ey: 4, hx: 5, hy: 6 }, droppedSword: true, face: 'ko' }
+      ]
+    }
+  };
+
+  // ============================================================================
+  // 4. 建立並渲染下方完整棋盤格 Sprite Sheet 畫布矩陣
+  // ============================================================================
+  const sheetContainer = document.getElementById('sheetContainer');
+  const cellMap = {};
+
+  function buildAllSpriteCells() {
+    sheetContainer.innerHTML = '';
+    Object.entries(SPRITE_SHEET).forEach(([animKey, group]) => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'sheet-row';
+
+      const labelEl = document.createElement('div');
+      labelEl.className = 'row-label';
+      labelEl.innerHTML = `${group.title}<small>${group.sub}</small>`;
+      rowEl.appendChild(labelEl);
+
+      const trackEl = document.createElement('div');
+      trackEl.className = 'frames-track';
+
+      cellMap[animKey] = [];
+
+      group.frames.forEach((frameCfg, idx) => {
+        const cell = document.createElement('div');
+        cell.className = 'frame-cell';
+        cell.onclick = () => selectSpecificFrame(animKey, idx);
+
+        const badge = document.createElement('span');
+        badge.className = 'frame-idx';
+        badge.textContent = `#${idx + 1}`;
+        cell.appendChild(badge);
+
+        const cvs = document.createElement('canvas');
+        cvs.width = CELL_SIZE;
+        cvs.height = CELL_SIZE;
+        const cCtx = cvs.getContext('2d');
+        renderPixelShaderFrame(cCtx, frameCfg);
+
+        cell.appendChild(cvs);
+        trackEl.appendChild(cell);
+        cellMap[animKey].push({ cell, canvas: cvs, cfg: frameCfg });
+      });
+
+      rowEl.appendChild(trackEl);
+      sheetContainer.appendChild(rowEl);
+    });
+  }
+
+  buildAllSpriteCells();
+
+  // ============================================================================
+  // 5. 支援直接載入使用者的參考精靈圖 (智慧灰白棋盤格去背與自動網格切片器)
+  // ============================================================================
+  function handleCustomSheetUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const img = new Image();
+    img.onload = () => {
+      // 1. 建立離屏畫布讀取整張圖片並自動去除灰白棋盤格背景
+      const w = img.width, h = img.height;
+      const temp = document.createElement('canvas');
+      temp.width = w;
+      temp.height = h;
+      const tCtx = temp.getContext('2d');
+      tCtx.drawImage(img, 0, 0);
+
+      const imgData = tCtx.getImageData(0, 0, w, h);
+      const d = imgData.data;
+
+      // 採樣左上角背景色範圍，將低飽和度的灰/深灰棋盤格像素設為全透明
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i + 1], b = d[i + 2];
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        const sat = max - min;
+        // 棋盤格特徵：R≈G≈B (無彩度) 且亮度介於 35~95 之間
+        if (sat <= 10 && max >= 32 && max <= 96) {
+          d[i + 3] = 0;
+        }
+      }
+      tCtx.putImageData(imgData, 0, 0);
+
+      // 2. 按照 8 欄 x 4 列切片寫入各個動作格
+      const colW = w / 8;
+      const rowH = h / 4;
+      const keys = ['idle', 'run', 'slash', 'hurt'];
+
+      keys.forEach((k, rIdx) => {
+        cellMap[k].forEach((item, cIdx) => {
+          const ctx = item.canvas.getContext('2d');
+          ctx.clearRect(0, 0, CELL_SIZE, CELL_SIZE);
+          ctx.drawImage(
+            temp,
+            cIdx * colW, rIdx * rowH, colW, rowH,
+            0, 0, CELL_SIZE, CELL_SIZE
+          );
+        });
+      });
+
+      updateLiveStage();
+    };
+    img.src = URL.createObjectURL(file);
+  }
+
+  // ============================================================================
+  // 6. 即時動畫播放器與洋蔥皮/像素網格輔助線
+  // ============================================================================
+  const liveCanvas = document.getElementById('liveCanvas');
+  const liveCtx = liveCanvas.getContext('2d');
+
+  let currentAnim = 'idle';
+  let currentFrameIdx = 0;
+  let isPlaying = true;
+  let fps = 9;
+  let showGrid = false;
+  let showOnion = false;
+  let lastFrameTime = 0;
+
+  function updateLiveStage() {
+    const frames = cellMap[currentAnim];
+    if (!frames || !frames.length) return;
+    currentFrameIdx = currentFrameIdx % frames.length;
+
+    liveCtx.clearRect(0, 0, CELL_SIZE, CELL_SIZE);
+
+    // 洋蔥皮殘影 (顯示上一幀 28% 透明度)
+    if (showOnion && frames.length > 1) {
+      const prevIdx = (currentFrameIdx - 1 + frames.length) % frames.length;
+      liveCtx.save();
+      liveCtx.globalAlpha = 0.28;
+      liveCtx.drawImage(frames[prevIdx].canvas, 0, 0);
+      liveCtx.restore();
+    }
+
+    // 繪製當前幀
+    liveCtx.drawImage(frames[currentFrameIdx].canvas, 0, 0);
+
+    // 像素網格輔助線
+    if (showGrid) {
+      liveCtx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+      for (let i = 0; i < CELL_SIZE; i += 8) {
+        liveCtx.fillRect(i, 0, 1, CELL_SIZE);
+        liveCtx.fillRect(0, i, CELL_SIZE, 1);
+      }
+    }
+
+    // 更新 HUD 與下方高亮框
+    document.getElementById('hudAnimName').textContent = currentAnim.toUpperCase();
+    document.getElementById('hudFrameInfo').textContent = `FRAME ${currentFrameIdx + 1} / ${frames.length}`;
+
+    document.querySelectorAll('.frame-cell').forEach(el => el.classList.remove('current-frame'));
+    frames[currentFrameIdx].cell.classList.add('current-frame');
+  }
+
+  function loop(timestamp) {
+    if (isPlaying) {
+      const interval = 1000 / fps;
+      if (timestamp - lastFrameTime >= interval) {
+        lastFrameTime = timestamp;
+        const frames = cellMap[currentAnim];
+        currentFrameIdx = (currentFrameIdx + 1) % frames.length;
+        updateLiveStage();
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+  updateLiveStage();
+  requestAnimationFrame(loop);
+
+  // ============================================================================
+  // 7. 互動控制函式與 PNG 精靈圖匯出
+  // ============================================================================
+  function setAnim(animKey, btnEl) {
+    currentAnim = animKey;
+    currentFrameIdx = 0;
+    document.querySelectorAll('.anim-tabs .px-btn').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    updateLiveStage();
+  }
+
+  function selectSpecificFrame(animKey, idx) {
+    currentAnim = animKey;
+    currentFrameIdx = idx;
+    isPlaying = false;
+    document.getElementById('playPauseBtn').textContent = '▶ 繼續播放';
+    document.querySelectorAll('.anim-tabs .px-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-anim') === animKey);
+    });
+    updateLiveStage();
+  }
+
+  function togglePlay() {
+    isPlaying = !isPlaying;
+    document.getElementById('playPauseBtn').textContent = isPlaying ? '⏸ 暫停播放' : '▶ 繼續播放';
+  }
+
+  function stepFrame(dir) {
+    isPlaying = false;
+    document.getElementById('playPauseBtn').textContent = '▶ 繼續播放';
+    const len = cellMap[currentAnim].length;
+    currentFrameIdx = (currentFrameIdx + dir + len) % len;
+    updateLiveStage();
+  }
+
+  function updateFPS(val) {
+    fps = parseInt(val, 10);
+    document.getElementById('fpsLabel').textContent = `${fps} FPS`;
+  }
+
+  function toggleOutlineMode() {
+    darkOutline = !darkOutline;
+    document.getElementById('outlineBtn').textContent = `✒ 輪廓線: ${darkOutline ? '深紫黑' : '柔和褐'}`;
+    buildAllSpriteCells();
+    updateLiveStage();
+  }
+
+  function toggleGrid() {
+    showGrid = !showGrid;
+    const btn = document.getElementById('gridBtn');
+    btn.textContent = `⌗ 像素網格: ${showGrid ? 'ON' : 'OFF'}`;
+    btn.classList.toggle('active', showGrid);
+    updateLiveStage();
+  }
+
+  function toggleOnion() {
+    showOnion = !showOnion;
+    const btn = document.getElementById('onionBtn');
+    btn.textContent = `◐ 洋蔥皮殘影: ${showOnion ? 'ON' : 'OFF'}`;
+    btn.classList.toggle('active', showOnion);
+    updateLiveStage();
+  }
+
+  function exportSpriteSheet() {
+    const exp = document.getElementById('exportCanvas');
+    const eCtx = exp.getContext('2d');
+    eCtx.clearRect(0, 0, exp.width, exp.height);
+
+    const keys = ['idle', 'run', 'slash', 'hurt'];
+    keys.forEach((k, rowIdx) => {
+      cellMap[k].forEach((item, colIdx) => {
+        eCtx.drawImage(item.canvas, colIdx * CELL_SIZE, rowIdx * CELL_SIZE);
+      });
+    });
+
+    const link = document.createElement('a');
+    link.download = 'emerald_ranger_72x72_spritesheet.png';
+    link.href = exp.toDataURL('image/png');
+    link.click();
+  }
+</script>
+</body>
+</html>

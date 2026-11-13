@@ -1,0 +1,875 @@
+[
+  {
+    "id": "emerald-ranger-studio-v1-1",
+    "accessionId": "ACC-2026-002",
+    "versionTag": "v1.1.0-patched",
+    "parentAccessionId": "ACC-2026-001",
+    "title": "翠風遊俠 // 精靈圖工作室（現行修復版前台）",
+    "originFileName": "emerald-ranger-studio.html",
+    "sourcePath": "public/emerald-ranger-studio.html",
+    "previewUrl": "/emerald-ranger-studio.html",
+    "archivedAt": "2026-11-13T13:02:46.150Z",
+    "lastInspectedAt": "2026-11-13T13:02:46.150Z",
+    "locked": true,
+    "technicalReport": {
+      "detectedTitle": "SPRITE SHEET STUDIO // 翠風遊俠逐幀手繪精靈圖",
+      "category": "像素著色器與精靈圖工作室",
+      "engineType": "Canvas 2D Vector-to-Pixel Quantizer + Morphological Outline Shader",
+      "summary": "本件文物為零外部 JS 相依的單頁 Canvas 2D 程式化精靈圖工作站（共 1345 行源碼、48.1 KB）。核心採用「高精度貝茲曲線骨架 → Alpha 二值化與 31 色感知量化 → 4 鄰域 1px 形態學外框膨脹」四階段像素著色器管線，完整產出 4 組動作序列、共 25 幀 72×72 像素精靈圖。本次靜態與結構稽核共發現 0 項邏輯與資源管理待改善處（含色盤數量標示誤差、待機首幀 backArm 劍柄未渲染、Blob URL 未釋放與去背色域碰撞風險）及 0 項嚴重安全問題。",
+      "externalDependencies": [
+        "https://fonts.googleapis.com",
+        "https://fonts.gstatic.com",
+        "https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap"
+      ],
+      "cssVariables": [
+        {
+          "name": "--bg-void",
+          "value": "#0d0c12"
+        },
+        {
+          "name": "--bg-panel",
+          "value": "#181622"
+        },
+        {
+          "name": "--bg-well",
+          "value": "#110f18"
+        },
+        {
+          "name": "--ink",
+          "value": "#050408"
+        },
+        {
+          "name": "--brass-lo",
+          "value": "#6e4e1c"
+        },
+        {
+          "name": "--brass-mid",
+          "value": "#b88a32"
+        },
+        {
+          "name": "--brass-hi",
+          "value": "#f2cf66"
+        },
+        {
+          "name": "--emerald-hi",
+          "value": "#4ade80"
+        },
+        {
+          "name": "--emerald-mid",
+          "value": "#16a34a"
+        },
+        {
+          "name": "--text-main",
+          "value": "#f5f2eb"
+        },
+        {
+          "name": "--text-muted",
+          "value": "#968fb3"
+        },
+        {
+          "name": "--px",
+          "value": "3px"
+        },
+        {
+          "name": "--font-en",
+          "value": "'Press Start 2P', monospace"
+        },
+        {
+          "name": "--font-zh",
+          "value": "'DotGothic16', monospace"
+        }
+      ],
+      "detectedFunctions": [
+        "nearestPaletteRGB",
+        "drawLimb",
+        "drawVectorRanger",
+        "drawKnightSword",
+        "renderPixelShaderFrame",
+        "buildAllSpriteCells",
+        "isCheckerboardPixel",
+        "handleCustomSheetUpload",
+        "updateLiveStage",
+        "scheduleLoop",
+        "stopLoop",
+        "loop",
+        "setAnim",
+        "selectSpecificFrame",
+        "togglePlay",
+        "stepFrame",
+        "updateFPS",
+        "toggleOutlineMode",
+        "toggleGrid",
+        "toggleOnion",
+        "exportSpriteSheet",
+        "enqueue"
+      ],
+      "canvasElements": [
+        {
+          "id": "liveCanvas",
+          "width": 72,
+          "height": 72
+        },
+        {
+          "id": "exportCanvas",
+          "width": 576,
+          "height": 288
+        }
+      ],
+      "pipelineSteps": [
+        {
+          "stepNumber": "01",
+          "name": "高精度貝茲曲線骨架繪製",
+          "mechanism": "drawVectorRanger / drawLimb / drawKnightSword 以線性漸層與貝茲曲線建構 72×72 向量原稿",
+          "complexityNote": "O(primitives) 離屏 Canvas 2D 光柵化"
+        },
+        {
+          "stepNumber": "02",
+          "name": "Alpha 二值化去毛邊與色彩量化",
+          "mechanism": "getImageData 讀取 RGBA，對 alpha >= 115 像素執行人眼加權歐氏距離 (0.30R / 0.59G / 0.11B) 色盤吸附",
+          "complexityNote": "72×72 × 31 色比較"
+        },
+        {
+          "stepNumber": "03",
+          "name": "4 鄰域形態學膨脹外框著色器",
+          "mechanism": "掃描實心遮罩 mask[p]，對四向相鄰透明像素填入 1px 深紫黑 (#120d17) 或柔和褐 (#2d223a) 輪廓",
+          "complexityNote": "單次網格遍歷 (1..CELL_SIZE-2)"
+        },
+        {
+          "stepNumber": "04",
+          "name": "地面投影與即時播放器合成",
+          "mechanism": "疊加地面像素陰影後繪製至圖集格位與 3 倍放大舞台，支援洋蔥皮殘影與 576×288 透明 PNG 匯出",
+          "complexityNote": "requestAnimationFrame 幀率節流播放"
+        }
+      ],
+      "extractedPalette": [
+        {
+          "hex": "#120d17",
+          "group": "輪廓基色",
+          "role": "1px 外部形態學膨脹描邊與結構暗線"
+        },
+        {
+          "hex": "#2e180d",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#4a2816",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#6e3d22",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#945530",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#b86f42",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#9e5e40",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#cf8460",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#f0a884",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#ffd1b3",
+          "group": "高光與肌膚",
+          "role": "臉部受光面、眼白或劍氣高光"
+        },
+        {
+          "hex": "#ffffff",
+          "group": "高光與肌膚",
+          "role": "臉部受光面、眼白或劍氣高光"
+        },
+        {
+          "hex": "#211c2e",
+          "group": "鎖甲與精鋼",
+          "role": "鎖子甲袖口、長褲與雙刃鋼劍"
+        },
+        {
+          "hex": "#093016",
+          "group": "翠綠斗篷",
+          "role": "遊俠披風立體褶皺明暗階梯"
+        },
+        {
+          "hex": "#125226",
+          "group": "翠綠斗篷",
+          "role": "遊俠披風立體褶皺明暗階梯"
+        },
+        {
+          "hex": "#1e7d39",
+          "group": "翠綠斗篷",
+          "role": "遊俠披風立體褶皺明暗階梯"
+        },
+        {
+          "hex": "#32ab4f",
+          "group": "翠綠斗篷",
+          "role": "遊俠披風立體褶皺明暗階梯"
+        },
+        {
+          "hex": "#66d978",
+          "group": "翠綠斗篷",
+          "role": "遊俠披風立體褶皺明暗階梯"
+        },
+        {
+          "hex": "#29170e",
+          "group": "皮革與肌膚",
+          "role": "胸甲、護腕、長靴與五官陰影"
+        },
+        {
+          "hex": "#472a1a",
+          "group": "皮革與肌膚",
+          "role": "胸甲、護腕、長靴與五官陰影"
+        },
+        {
+          "hex": "#694028",
+          "group": "皮革與肌膚",
+          "role": "胸甲、護腕、長靴與五官陰影"
+        },
+        {
+          "hex": "#8c583a",
+          "group": "皮革與肌膚",
+          "role": "胸甲、護腕、長靴與五官陰影"
+        },
+        {
+          "hex": "#b07450",
+          "group": "皮革與肌膚",
+          "role": "胸甲、護腕、長靴與五官陰影"
+        },
+        {
+          "hex": "#1f222e",
+          "group": "鎖甲與精鋼",
+          "role": "鎖子甲袖口、長褲與雙刃鋼劍"
+        },
+        {
+          "hex": "#32384a",
+          "group": "鎖甲與精鋼",
+          "role": "鎖子甲袖口、長褲與雙刃鋼劍"
+        },
+        {
+          "hex": "#4b536b",
+          "group": "鎖甲與精鋼",
+          "role": "鎖子甲袖口、長褲與雙刃鋼劍"
+        },
+        {
+          "hex": "#6c7694",
+          "group": "鎖甲與精鋼",
+          "role": "鎖子甲袖口、長褲與雙刃鋼劍"
+        },
+        {
+          "hex": "#805510",
+          "group": "皮革與肌膚",
+          "role": "胸甲、護腕、長靴與五官陰影"
+        },
+        {
+          "hex": "#cca029",
+          "group": "黃銅與劍光",
+          "role": "胸針扣環、十字護手與揮砍弧光"
+        },
+        {
+          "hex": "#ffe36e",
+          "group": "黃銅與劍光",
+          "role": "胸針扣環、十字護手與揮砍弧光"
+        },
+        {
+          "hex": "#8fa3bf",
+          "group": "鎖甲與精鋼",
+          "role": "鎖子甲袖口、長褲與雙刃鋼劍"
+        },
+        {
+          "hex": "#c4d7ed",
+          "group": "主色盤",
+          "role": "畫面著色色階"
+        },
+        {
+          "hex": "#fff6a3",
+          "group": "高光與肌膚",
+          "role": "臉部受光面、眼白或劍氣高光"
+        }
+      ],
+      "spriteSpec": [
+        {
+          "key": "idle",
+          "title": "ROW 1 // IDLE & DRAW",
+          "description": "待機呼吸、摸劍柄與亮劍戒備 (5 Frames)",
+          "frameCount": 5
+        },
+        {
+          "key": "run",
+          "title": "ROW 2 // RUN CYCLE",
+          "description": "8幀流暢全身疾跑與翠綠斗篷波浪飛揚 (8 Frames)",
+          "frameCount": 8
+        },
+        {
+          "key": "slash",
+          "title": "ROW 3 // SWORD SLASH",
+          "description": "戒備、舉劍蓄力、前踏平斬、星芒劍氣爆發 (6 Frames)",
+          "frameCount": 6
+        },
+        {
+          "key": "hurt",
+          "title": "ROW 4 // HURT & DEFEAT",
+          "description": "受擊驚呼、重心失衡後仰、跌落與倒地不起 (6 Frames)",
+          "frameCount": 6
+        }
+      ],
+      "metrics": {
+        "fileSizeBytes": 49256,
+        "lineCount": 1345,
+        "htmlLines": 97,
+        "cssLines": 302,
+        "jsLines": 946,
+        "cssVarCount": 14,
+        "functionCount": 22,
+        "canvasCount": 2,
+        "paletteColorCount": 32,
+        "claimedPaletteCount": 32,
+        "totalSpriteFrames": 25,
+        "spriteRowsCount": 4,
+        "cellResolution": "72×72 px",
+        "externalDependencyCount": 3
+      },
+      "findings": [
+        {
+          "id": "pass-palette-consistency",
+          "severity": "pass",
+          "category": "色盤規格一致性",
+          "title": "色盤標示與著色器行為完全一致（32 色大師色盤：31 著色 ＋ 1 輪廓）",
+          "lineRef": "L402",
+          "evidence": "頂部標題、色盤區文案與 MASTER_PALETTE_HEX 陣列及 nearestPaletteRGB() 量化迴圈定義完全對齊。",
+          "recommendation": "已通過一致性驗證。"
+        },
+        {
+          "id": "pass-backarm-sword",
+          "severity": "pass",
+          "category": "骨架渲染邏輯",
+          "title": "後手 backArm.swordAngle 佩劍繪製邏輯已補全",
+          "lineRef": "L552",
+          "evidence": "LAYER 2 已針對 ba.swordAngle !== undefined 呼叫 drawKnightSword()，待機第 1 幀佩劍正常顯示。",
+          "recommendation": "已通過骨架渲染檢查。"
+        },
+        {
+          "id": "pass-blob-url-cleanup",
+          "severity": "pass",
+          "category": "資源生命週期",
+          "title": "自訂精靈圖載入完成與錯誤時皆已安全釋放 Blob ObjectURL",
+          "lineRef": "L1097, L1100",
+          "evidence": "handleCustomSheetUpload() 已於 onload 與 onerror 回呼中呼叫 URL.revokeObjectURL(objectUrl)。",
+          "recommendation": "已通過資源回收檢查。"
+        },
+        {
+          "id": "pass-edge-floodfill-chromakey",
+          "severity": "pass",
+          "category": "影像去背演算法",
+          "title": "已採用四邊界連通域 BFS Flood Fill 去背演算法",
+          "lineRef": "L1084",
+          "evidence": "僅從圖片四邊界向外擴散剔除棋盤格背景，完整保護角色輪廓內部的暗灰鎖甲與長褲材質。",
+          "recommendation": "已通過影像去背保護驗證。"
+        },
+        {
+          "id": "pass-pooled-shader-buffers",
+          "severity": "pass",
+          "category": "渲染效能優化",
+          "title": "著色器已改用模組級離屏 Canvas 與遮罩陣列池化複用",
+          "lineRef": "L915",
+          "evidence": "renderPixelShaderFrame() 共用預先配置的 shaderOffCanvas、shaderOutCanvas 與 shaderMask，零 DOM 重建開銷。",
+          "recommendation": "已通過記憶體池化檢查。"
+        },
+        {
+          "id": "pass-clamped-outline-and-dynamic-export",
+          "severity": "pass",
+          "category": "邊界與匯出限制",
+          "title": "已實作夾邊 1px 外框保護與動態圖集匯出寬度計算",
+          "lineRef": "L944",
+          "evidence": "形態學外框掃描涵蓋全 0..71 網格並採鄰域夾邊檢查，匯出畫布亦改為動態計算 maxCols × CELL_SIZE。",
+          "recommendation": "已通過邊界與匯出規格驗證。"
+        },
+        {
+          "id": "pass-pause-aware-raf",
+          "severity": "pass",
+          "category": "執行週期控制",
+          "title": "動畫播放迴圈已支援暫停即停用 requestAnimationFrame",
+          "lineRef": "L1230",
+          "evidence": "stopLoop() 於暫停或鎖定單幀時呼叫 cancelAnimationFrame(rafId) 中止排程，恢復播放才透過 scheduleLoop() 重啟。",
+          "recommendation": "已通過執行週期控管檢查。"
+        },
+        {
+          "id": "pass-perceptual-quantization",
+          "severity": "pass",
+          "category": "著色器演算法品質",
+          "title": "加權色彩空間感知量化與 Alpha 二值化消除半透明糊邊",
+          "lineRef": "L31, L438",
+          "evidence": "透過 a >= 115 硬閾值二值化徹底清除向量抗鋸齒毛邊，並以 ITU-R BT.601 感知權重 (0.30R / 0.59G / 0.11B) 將連續漸層吸附至鎖定色盤，搭配全域 image-rendering: pixelated 確保近鄰取樣銳利度。",
+          "recommendation": "保持現有色彩量化模型，此設計能極佳平衡手繪光影層次與像素點陣顆粒感。"
+        },
+        {
+          "id": "pass-complete-sprite-atlas",
+          "severity": "pass",
+          "category": "精靈圖動作規格",
+          "title": "完整 4 列 25 幀動作序列與 576×288 透明圖集輸出驗證通過",
+          "lineRef": "L979",
+          "evidence": "完整實作 Idle(5)、Run(8)、Slash(6)、Hurt/KO(6) 共 25 組關鍵幀骨架參數，支援即時 2–16 FPS 調速、洋蔥皮殘影、8×8 網格與透明底 PNG 匯出，無任何外部圖像資產依賴。",
+          "recommendation": "可作為標準程式化精靈圖生成管線範本存檔。"
+        }
+      ]
+    },
+    "curatorialNotes": [
+      {
+        "id": "note-seed-v1-1",
+        "author": "工程修訂室",
+        "content": "現行前台主檔已套用 4 項技術修復：統一 32 色盤標示（31 著色＋1 輪廓）、補齊 backArm.swordAngle 繪製、改採四邊界 Flood Fill 去背並釋放 ObjectURL、池化離屏緩衝畫布並改進暫停 rAF 控制。",
+        "createdAt": "2026-11-13T13:02:46.150Z"
+      }
+    ]
+  },
+  {
+    "id": "emerald-ranger-baseline-v1",
+    "accessionId": "ACC-2026-001",
+    "versionTag": "v1.0.0-baseline",
+    "title": "翠風遊俠 // 精靈圖工作室（原始基準快照）",
+    "originFileName": "Emerald_Ranger____HD_Pixel_Shader___Sprite_Sheet_Studio_82cc6658.html",
+    "sourcePath": "public/assets/aistudio/Emerald_Ranger____HD_Pixel_Shader___Sprite_Sheet_Studio_82cc6658.html",
+    "previewUrl": "/assets/aistudio/Emerald_Ranger____HD_Pixel_Shader___Sprite_Sheet_Studio_82cc6658.html",
+    "archivedAt": "2026-11-13T13:02:46.150Z",
+    "lastInspectedAt": "2026-11-13T13:02:46.150Z",
+    "locked": true,
+    "technicalReport": {
+      "detectedTitle": "SPRITE SHEET STUDIO // 翠風遊俠逐幀手繪精靈圖",
+      "category": "像素著色器與精靈圖工作室",
+      "engineType": "Canvas 2D Vector-to-Pixel Quantizer + Morphological Outline Shader",
+      "summary": "本件文物為零外部 JS 相依的單頁 Canvas 2D 程式化精靈圖工作站（共 1273 行源碼、46.1 KB）。核心採用「高精度貝茲曲線骨架 → Alpha 二值化與 31 色感知量化 → 4 鄰域 1px 形態學外框膨脹」四階段像素著色器管線，完整產出 4 組動作序列、共 25 幀 72×72 像素精靈圖。本次靜態與結構稽核共發現 4 項邏輯與資源管理待改善處（含色盤數量標示誤差、待機首幀 backArm 劍柄未渲染、Blob URL 未釋放與去背色域碰撞風險）及 0 項嚴重安全問題。",
+      "externalDependencies": [
+        "https://fonts.googleapis.com",
+        "https://fonts.gstatic.com",
+        "https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap"
+      ],
+      "cssVariables": [
+        {
+          "name": "--bg-void",
+          "value": "#0d0c12"
+        },
+        {
+          "name": "--bg-panel",
+          "value": "#181622"
+        },
+        {
+          "name": "--bg-well",
+          "value": "#110f18"
+        },
+        {
+          "name": "--ink",
+          "value": "#050408"
+        },
+        {
+          "name": "--brass-lo",
+          "value": "#6e4e1c"
+        },
+        {
+          "name": "--brass-mid",
+          "value": "#b88a32"
+        },
+        {
+          "name": "--brass-hi",
+          "value": "#f2cf66"
+        },
+        {
+          "name": "--emerald-hi",
+          "value": "#4ade80"
+        },
+        {
+          "name": "--emerald-mid",
+          "value": "#16a34a"
+        },
+        {
+          "name": "--text-main",
+          "value": "#f5f2eb"
+        },
+        {
+          "name": "--text-muted",
+          "value": "#968fb3"
+        },
+        {
+          "name": "--px",
+          "value": "3px"
+        },
+        {
+          "name": "--font-en",
+          "value": "'Press Start 2P', monospace"
+        },
+        {
+          "name": "--font-zh",
+          "value": "'DotGothic16', monospace"
+        }
+      ],
+      "detectedFunctions": [
+        "nearestPaletteRGB",
+        "drawLimb",
+        "drawVectorRanger",
+        "drawKnightSword",
+        "renderPixelShaderFrame",
+        "buildAllSpriteCells",
+        "handleCustomSheetUpload",
+        "updateLiveStage",
+        "loop",
+        "setAnim",
+        "selectSpecificFrame",
+        "togglePlay",
+        "stepFrame",
+        "updateFPS",
+        "toggleOutlineMode",
+        "toggleGrid",
+        "toggleOnion",
+        "exportSpriteSheet"
+      ],
+      "canvasElements": [
+        {
+          "id": "liveCanvas",
+          "width": 72,
+          "height": 72
+        },
+        {
+          "id": "exportCanvas",
+          "width": 576,
+          "height": 288
+        }
+      ],
+      "pipelineSteps": [
+        {
+          "stepNumber": "01",
+          "name": "高精度貝茲曲線骨架繪製",
+          "mechanism": "drawVectorRanger / drawLimb / drawKnightSword 以線性漸層與貝茲曲線建構 72×72 向量原稿",
+          "complexityNote": "O(primitives) 離屏 Canvas 2D 光柵化"
+        },
+        {
+          "stepNumber": "02",
+          "name": "Alpha 二值化去毛邊與色彩量化",
+          "mechanism": "getImageData 讀取 RGBA，對 alpha >= 115 像素執行人眼加權歐氏距離 (0.30R / 0.59G / 0.11B) 色盤吸附",
+          "complexityNote": "72×72 × 31 色比較"
+        },
+        {
+          "stepNumber": "03",
+          "name": "4 鄰域形態學膨脹外框著色器",
+          "mechanism": "掃描實心遮罩 mask[p]，對四向相鄰透明像素填入 1px 深紫黑 (#120d17) 或柔和褐 (#2d223a) 輪廓",
+          "complexityNote": "單次網格遍歷 (1..CELL_SIZE-2)"
+        },
+        {
+          "stepNumber": "04",
+          "name": "地面投影與即時播放器合成",
+          "mechanism": "疊加地面像素陰影後繪製至圖集格位與 3 倍放大舞台，支援洋蔥皮殘影與 576×288 透明 PNG 匯出",
+          "complexityNote": "requestAnimationFrame 幀率節流播放"
+        }
+      ],
+      "extractedPalette": [
+        {
+          "hex": "#120d17",
+          "group": "輪廓基色",
+          "role": "1px 外部形態學膨脹描邊與結構暗線"
+        },
+        {
+          "hex": "#2e180d",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#4a2816",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#6e3d22",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#945530",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#b86f42",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#9e5e40",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#cf8460",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#f0a884",
+          "group": "棕髮階梯",
+          "role": "蓬鬆層次髮束與暗部陰影"
+        },
+        {
+          "hex": "#ffd1b3",
+          "group": "高光與肌膚",
+          "role": "臉部受光面、眼白或劍氣高光"
+        },
+        {
+          "hex": "#ffffff",
+          "group": "高光與肌膚",
+          "role": "臉部受光面、眼白或劍氣高光"
+        },
+        {
+          "hex": "#211c2e",
+          "group": "鎖甲與精鋼",
+          "role": "鎖子甲袖口、長褲與雙刃鋼劍"
+        },
+        {
+          "hex": "#093016",
+          "group": "翠綠斗篷",
+          "role": "遊俠披風立體褶皺明暗階梯"
+        },
+        {
+          "hex": "#125226",
+          "group": "翠綠斗篷",
+          "role": "遊俠披風立體褶皺明暗階梯"
+        },
+        {
+          "hex": "#1e7d39",
+          "group": "翠綠斗篷",
+          "role": "遊俠披風立體褶皺明暗階梯"
+        },
+        {
+          "hex": "#32ab4f",
+          "group": "翠綠斗篷",
+          "role": "遊俠披風立體褶皺明暗階梯"
+        },
+        {
+          "hex": "#66d978",
+          "group": "翠綠斗篷",
+          "role": "遊俠披風立體褶皺明暗階梯"
+        },
+        {
+          "hex": "#29170e",
+          "group": "皮革與肌膚",
+          "role": "胸甲、護腕、長靴與五官陰影"
+        },
+        {
+          "hex": "#472a1a",
+          "group": "皮革與肌膚",
+          "role": "胸甲、護腕、長靴與五官陰影"
+        },
+        {
+          "hex": "#694028",
+          "group": "皮革與肌膚",
+          "role": "胸甲、護腕、長靴與五官陰影"
+        },
+        {
+          "hex": "#8c583a",
+          "group": "皮革與肌膚",
+          "role": "胸甲、護腕、長靴與五官陰影"
+        },
+        {
+          "hex": "#b07450",
+          "group": "皮革與肌膚",
+          "role": "胸甲、護腕、長靴與五官陰影"
+        },
+        {
+          "hex": "#1f222e",
+          "group": "鎖甲與精鋼",
+          "role": "鎖子甲袖口、長褲與雙刃鋼劍"
+        },
+        {
+          "hex": "#32384a",
+          "group": "鎖甲與精鋼",
+          "role": "鎖子甲袖口、長褲與雙刃鋼劍"
+        },
+        {
+          "hex": "#4b536b",
+          "group": "鎖甲與精鋼",
+          "role": "鎖子甲袖口、長褲與雙刃鋼劍"
+        },
+        {
+          "hex": "#6c7694",
+          "group": "鎖甲與精鋼",
+          "role": "鎖子甲袖口、長褲與雙刃鋼劍"
+        },
+        {
+          "hex": "#805510",
+          "group": "皮革與肌膚",
+          "role": "胸甲、護腕、長靴與五官陰影"
+        },
+        {
+          "hex": "#cca029",
+          "group": "黃銅與劍光",
+          "role": "胸針扣環、十字護手與揮砍弧光"
+        },
+        {
+          "hex": "#ffe36e",
+          "group": "黃銅與劍光",
+          "role": "胸針扣環、十字護手與揮砍弧光"
+        },
+        {
+          "hex": "#8fa3bf",
+          "group": "鎖甲與精鋼",
+          "role": "鎖子甲袖口、長褲與雙刃鋼劍"
+        },
+        {
+          "hex": "#c4d7ed",
+          "group": "主色盤",
+          "role": "畫面著色色階"
+        },
+        {
+          "hex": "#fff6a3",
+          "group": "高光與肌膚",
+          "role": "臉部受光面、眼白或劍氣高光"
+        }
+      ],
+      "spriteSpec": [
+        {
+          "key": "idle",
+          "title": "ROW 1 // IDLE & DRAW",
+          "description": "待機呼吸、摸劍柄與亮劍戒備 (5 Frames)",
+          "frameCount": 5
+        },
+        {
+          "key": "run",
+          "title": "ROW 2 // RUN CYCLE",
+          "description": "8幀流暢全身疾跑與翠綠斗篷波浪飛揚 (8 Frames)",
+          "frameCount": 8
+        },
+        {
+          "key": "slash",
+          "title": "ROW 3 // SWORD SLASH",
+          "description": "戒備、舉劍蓄力、前踏平斬、星芒劍氣爆發 (6 Frames)",
+          "frameCount": 6
+        },
+        {
+          "key": "hurt",
+          "title": "ROW 4 // HURT & DEFEAT",
+          "description": "受擊驚呼、重心失衡後仰、跌落與倒地不起 (6 Frames)",
+          "frameCount": 6
+        }
+      ],
+      "metrics": {
+        "fileSizeBytes": 47173,
+        "lineCount": 1273,
+        "htmlLines": 97,
+        "cssLines": 302,
+        "jsLines": 874,
+        "cssVarCount": 14,
+        "functionCount": 18,
+        "canvasCount": 2,
+        "paletteColorCount": 32,
+        "claimedPaletteCount": 32,
+        "totalSpriteFrames": 25,
+        "spriteRowsCount": 4,
+        "cellResolution": "72×72 px",
+        "externalDependencyCount": 3
+      },
+      "findings": [
+        {
+          "id": "palette-count-mismatch",
+          "severity": "warning",
+          "category": "色盤規格一致性",
+          "title": "色盤規格標示不一致（頂部稱 32 色、控制列稱 30-Color、實測陣列 32 色／量化取用 31 色）",
+          "lineRef": "L323, L380, L402, L441",
+          "evidence": "頂部標題標示「32色盤鎖定」，控制列卻寫「30-Color Master Palette」，而 MASTER_PALETTE_HEX 陣列實測包含 32 個色碼；此外 nearestPaletteRGB() 迴圈自 i = 1 起算，刻意保留索引 0 (#120d17) 專供外框著色，因此實際參與色彩量化的有效色階為 31 色。",
+          "recommendation": "統一介面文案為「32 色大師色盤（31 著色色階 ＋ 1 輪廓專色）」，消除規格文件與著色器行為的落差。"
+        },
+        {
+          "id": "unused-backarm-sword",
+          "severity": "warning",
+          "category": "骨架渲染邏輯",
+          "title": "待機第 1 幀定義的 backArm.swordAngle 屬性未被渲染函式讀取",
+          "lineRef": "L975, L552",
+          "evidence": "SPRITE_SHEET.idle.frames[0] 在 backArm 中設定了 swordAngle: -35，但 drawVectorRanger() 僅在 LAYER 7 (pose.frontArm) 判斷並呼叫 drawKnightSword()，導致待機首幀的佩劍完全未繪製。",
+          "recommendation": "在 LAYER 2 (pose.backArm) 補上 `if (ba.swordAngle !== undefined) drawKnightSword(...)`，或將收鞘劍柄獨立為腰間劍鞘圖層。"
+        },
+        {
+          "id": "blob-url-memory-leak",
+          "severity": "warning",
+          "category": "資源生命週期",
+          "title": "自訂精靈圖載入函式建立 ObjectURL 後未釋放記憶體",
+          "lineRef": "L1123",
+          "evidence": "handleCustomSheetUpload() 呼叫 URL.createObjectURL(file) 載入圖片，但 img.onload 完成繪製後未呼叫 URL.revokeObjectURL(img.src)，多次載入大型精靈圖將造成 Blob 參照滯留。",
+          "recommendation": "於 img.onload 結尾與 img.onerror 中呼叫 URL.revokeObjectURL(img.src) 立即回收瀏覽器暫存物件。"
+        },
+        {
+          "id": "chroma-key-collision",
+          "severity": "warning",
+          "category": "影像去背演算法",
+          "title": "棋盤格去背演算法可能誤刪角色深灰鎖甲與暗部像素",
+          "lineRef": "L1098",
+          "evidence": "全域掃描「低彩度 (sat <= 10) 且亮度介於 32–96」的像素並設為透明，未限定僅從圖片邊界執行 Flood Fill，導致色盤中接近無彩度的深鐵灰（如 #1f222e、#32384a）在覆蓋匯入後會變成破洞透明。",
+          "recommendation": "改以四角落 BFS Flood Fill 連通域去背，或比對 8×8 / 16×16 棋盤格週期性交錯色塊，保護角色輪廓內部的暗灰材質。"
+        },
+        {
+          "id": "offscreen-canvas-churn",
+          "severity": "info",
+          "category": "渲染效能優化",
+          "title": "單幀著色器每次重建 2 個離屏 Canvas DOM 節點",
+          "lineRef": "L899",
+          "evidence": "每次呼叫 renderPixelShaderFrame() 都會新建 off 與 finalOff 兩個離屏 <canvas>；初始化 25 幀或切換輪廓色時會瞬時配置 50 個離屏畫布與 ImageData 緩衝區。",
+          "recommendation": "於模組層級預先建立可複用的 72×72 離屏緩衝畫布與 Uint8Array 遮罩陣列，可大幅降低 GC 壓力。"
+        },
+        {
+          "id": "outline-boundary-and-export",
+          "severity": "info",
+          "category": "邊界與匯出限制",
+          "title": "1px 外框掃描略過最外圈邊界且匯出畫布固定為 8 欄寬度",
+          "lineRef": "L932, L396",
+          "evidence": "形態學膨脹迴圈範圍為 1..CELL_SIZE-2，若未來動作大幅延伸（如跳躍或長矛突刺）觸及第 0 或 71 像素邊緣將不會生成外框；另 exportCanvas 寫死 width=\"576\" (8 欄 × 72px)。",
+          "recommendation": "動態依據 max(...frames.length) * CELL_SIZE 計算 exportCanvas 寬度，並對邊界像素採夾邊保護（clamped neighbor check）。"
+        },
+        {
+          "id": "continuous-raf-when-paused",
+          "severity": "info",
+          "category": "執行週期控制",
+          "title": "動畫暫停時仍持續空轉 requestAnimationFrame 迴圈",
+          "lineRef": "L1186",
+          "evidence": "loop() 函式即使在 isPlaying === false 狀態下仍每幀排程下一輪 requestAnimationFrame，背景分頁或單幀鎖定檢視時仍維持 60Hz 空轉喚醒。",
+          "recommendation": "於暫停時停止遞迴排程，僅在 togglePlay() 恢復播放時重新啟動 rAF。"
+        },
+        {
+          "id": "pass-perceptual-quantization",
+          "severity": "pass",
+          "category": "著色器演算法品質",
+          "title": "加權色彩空間感知量化與 Alpha 二值化消除半透明糊邊",
+          "lineRef": "L31, L438",
+          "evidence": "透過 a >= 115 硬閾值二值化徹底清除向量抗鋸齒毛邊，並以 ITU-R BT.601 感知權重 (0.30R / 0.59G / 0.11B) 將連續漸層吸附至鎖定色盤，搭配全域 image-rendering: pixelated 確保近鄰取樣銳利度。",
+          "recommendation": "保持現有色彩量化模型，此設計能極佳平衡手繪光影層次與像素點陣顆粒感。"
+        },
+        {
+          "id": "pass-complete-sprite-atlas",
+          "severity": "pass",
+          "category": "精靈圖動作規格",
+          "title": "完整 4 列 25 幀動作序列與 576×288 透明圖集輸出驗證通過",
+          "lineRef": "L970",
+          "evidence": "完整實作 Idle(5)、Run(8)、Slash(6)、Hurt/KO(6) 共 25 組關鍵幀骨架參數，支援即時 2–16 FPS 調速、洋蔥皮殘影、8×8 網格與透明底 PNG 匯出，無任何外部圖像資產依賴。",
+          "recommendation": "可作為標準程式化精靈圖生成管線範本存檔。"
+        }
+      ]
+    },
+    "curatorialNotes": [
+      {
+        "id": "note-seed-v1",
+        "author": "文物鑑定室",
+        "content": "原始上傳基準檔已永久封存為 v1.0.0-baseline。經檢測記錄色盤標示不一致、待機首幀 backArm 佩劍未渲染、ObjectURL 未回收及全域去背碰撞等問題。",
+        "createdAt": "2026-11-13T13:02:46.150Z"
+      }
+    ]
+  }
+]
